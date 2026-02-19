@@ -7,7 +7,7 @@ RUN npm ci
 COPY frontend-react/ ./
 ARG VITE_API_URL
 ENV VITE_API_URL=${VITE_API_URL:-http://localhost:8000}
-RUN npm run build
+RUN npm run build:docker
 
 # Python backend + serve React static
 FROM python:3.11-slim
@@ -21,4 +21,4 @@ COPY --from=frontend /app/frontend-react/dist ./static
 
 ENV PYTHONUNBUFFERED=1
 EXPOSE 8000
-CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

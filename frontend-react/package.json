@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "build:docker": "vite build",
     "preview": "vite preview",
+    "start": "serve -s dist -l 3000",
     "lint": "tsc --noEmit",
     "test": "vitest",
     "test:ui": "vitest --ui"
@@ -19,7 +21,8 @@
     "lucide-react": "^0.408.0",
     "axios": "^1.6.7",
     "clsx": "^2.0.0",
-    "tailwind-merge": "^2.2.0"
+    "tailwind-merge": "^2.2.0",
+    "serve": "^14.2.4"
   },
   "devDependencies": {
     "vite": "^5.0.8",

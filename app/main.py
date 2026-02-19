@@ -1,14 +1,16 @@
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.staticfiles import StaticFiles
 
 from app.agent import execute_task, generate_final_report, generate_plan
+from app.context import set_api_keys
 from app.models import AgentState, ExecuteResponse, GoalRequest
+from app.security import PromptInjectionError, validate_goal
 from app.storage import delete_session, list_sessions, load_session, save_session
-from app.security import validate_goal, PromptInjectionError
 
 # Load .env explicitly with override
 env_file = Path(__file__).parent.parent / ".env"
@@ -29,6 +31,11 @@ app.add_middleware(
 )
 
 
+@app.exception_handler(HTTPException)
+async def _debug_404_handler(request: Request, exc: HTTPException):
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+
 # ---------------------------------------------------------------------------
 # GET /health
 # ---------------------------------------------------------------------------
@@ -45,18 +52,28 @@ def health_check():
 # ---------------------------------------------------------------------------
 
 
+def _apply_api_key_headers(req: Request) -> None:
+    """Read optional API key headers and set request-scoped context."""
+    openai_key = req.headers.get("X-OpenAI-API-Key")
+    tavily_key = req.headers.get("X-Tavily-API-Key")
+    if openai_key or tavily_key:
+        set_api_keys(openai_key=openai_key, tavily_key=tavily_key)
+
+
 @app.post("/agent/start", response_model=AgentState, status_code=201)
-def start_agent(request: GoalRequest):
+def start_agent(body: GoalRequest, req: Request):
     """
     Initialize a new agent session and generate the research plan.
     Validates research goal for prompt injection attacks.
     Returns the full AgentState with tasks populated.
+    Optional headers: X-OpenAI-API-Key, X-Tavily-API-Key (override env vars).
     """
+    _apply_api_key_headers(req)
     try:
         # Validate goal for prompt injection and suspicious content
-        validated_goal = validate_goal(request.goal)
+        validated_goal = validate_goal(body.goal)
     except PromptInjectionError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid goal: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Invalid goal: {str(e)}") from e
 
     state = AgentState(goal=validated_goal)
     state.mode = "plan"
@@ -100,8 +117,8 @@ def get_report(session_id: str):
         with open(state.final_report_path) as f:
             content = f.read()
         return Response(content=content, media_type="text/markdown")
-    except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="Report file not found")
+    except FileNotFoundError as err:
+        raise HTTPException(status_code=404, detail="Report file not found") from err
 
 
 # ---------------------------------------------------------------------------
@@ -110,11 +127,13 @@ def get_report(session_id: str):
 
 
 @app.post("/agent/{session_id}/execute", response_model=ExecuteResponse)
-def execute_step(session_id: str):
+def execute_step(session_id: str, req: Request):
     """
     Execute the next pending task in the session.
     Designed for step-by-step execution (the frontend calls this repeatedly).
+    Optional headers: X-OpenAI-API-Key, X-Tavily-API-Key (override env vars).
     """
+    _apply_api_key_headers(req)
     state = load_session(session_id)
     if state is None:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -186,3 +205,22 @@ def remove_session(session_id: str):
     success = delete_session(session_id)
     if not success:
         raise HTTPException(status_code=404, detail="Session not found")
+
+
+# ---------------------------------------------------------------------------
+# Serve React frontend (when static/ exists from Docker build)
+# ---------------------------------------------------------------------------
+STATIC_DIR = Path(__file__).parent.parent / "static"
+if STATIC_DIR.exists():
+    app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")
+
+    @app.get("/")
+    def serve_react():
+        return FileResponse(STATIC_DIR / "index.html")
+
+    @app.get("/{path:path}")
+    def serve_react_catchall(path: str):
+        fp = STATIC_DIR / path
+        if fp.exists() and fp.is_file():
+            return FileResponse(fp)
+        return FileResponse(STATIC_DIR / "index.html")
