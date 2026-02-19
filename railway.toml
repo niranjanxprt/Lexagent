@@ -1,6 +1,6 @@
 # Dockerfile builds React + Python; VITE_API_URL from Railway variables
 [build]
-builder = "dockerfile"
+builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
