@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Trash2, AlertCircle, Loader2 } from 'lucide-react';
-import { fetchAgentState, deleteSession } from '../lib/api.ts';
-import type { APIKeys } from '../lib/api.ts';
+import { fetchAgentState, deleteSession } from '../lib/api';
+import type { APIKeys } from '../lib/api';
 import { AgentState } from '../types';
 import { TaskCard } from './TaskCard';
 import { FinalReport } from './FinalReport';

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, RefreshCw, Trash2 } from 'lucide-react';
-import { fetchSessions, deleteSession } from '../lib/api.ts';
-import type { APIKeys } from '../lib/api.ts';
+import { fetchSessions, deleteSession } from '../lib/api';
+import type { APIKeys } from '../lib/api';
 import { Session } from '../types';
 import { truncateText, formatDate } from '../utils/format';
 

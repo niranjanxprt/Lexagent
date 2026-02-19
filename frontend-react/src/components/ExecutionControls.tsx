@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-import { executeStep } from '../lib/api.ts';
-import type { APIKeys } from '../lib/api.ts';
+import { executeStep } from '../lib/api';
+import type { APIKeys } from '../lib/api';
 
 interface ExecutionControlsProps {
   sessionId: string;
