@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { startSession } from '../lib/api';
-import type { APIKeys } from '../lib/api';
+import { startSession } from '../lib/api.ts';
+import type { APIKeys } from '../lib/api.ts';
 
 interface NewSessionProps {
   apiKeys: APIKeys;

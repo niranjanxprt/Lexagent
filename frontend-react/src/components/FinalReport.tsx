@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Download, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { fetchReport } from '../lib/api';
+import { fetchReport } from '../lib/api.ts';
 import { downloadMarkdown } from '../utils/format';
 
 interface FinalReportProps {
