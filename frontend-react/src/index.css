@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-manrope text-brand-black bg-white;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-inter font-bold;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-4 py-2 bg-brand-black text-brand-white rounded-lg font-manrope font-medium hover:opacity-90 transition-opacity;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 bg-light-bg text-brand-black rounded-lg font-manrope font-medium hover:bg-gray-300 transition-colors;
+  }
+
+  .card {
+    @apply bg-white border border-border rounded-lg p-6 shadow-sm;
+  }
+}
