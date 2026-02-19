@@ -13,6 +13,7 @@ reports
 .env.*
 !.env.example
 .cursor
+.claude
 .vscode
 .idea
 *.md

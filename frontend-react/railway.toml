@@ -1,0 +1,8 @@
+# Config for React - set Root Directory to frontend-react in Railway dashboard
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10

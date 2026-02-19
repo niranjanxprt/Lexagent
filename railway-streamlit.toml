@@ -1,0 +1,8 @@
+# Config for Streamlit - set Config Path to /railway-streamlit.toml in Railway dashboard
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile.streamlit"
+
+[deploy]
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
