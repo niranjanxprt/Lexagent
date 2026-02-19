@@ -56,7 +56,6 @@ def sanitize_user_input(text: str, max_length: int = 2000) -> str:
         r"(?i)(;|&&|\|\|)\s*(curl|wget|exec|sh)",  # Command injection
     ]
 
-    text_lower = text.lower()
     for pattern in injection_patterns:
         if re.search(pattern, text):
             raise PromptInjectionError(

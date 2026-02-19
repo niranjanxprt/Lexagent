@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { fetchSessions, deleteSession } from '../lib/api';
+import type { APIKeys } from '../lib/api';
 import { Session } from '../types';
 import { truncateText, formatDate } from '../utils/format';
 
@@ -8,12 +9,16 @@ interface SidebarProps {
   currentSessionId: string | null;
   onSessionSelect: (sessionId: string | null) => void;
   onSessionsRefresh?: () => void;
+  apiKeys: APIKeys;
+  onApiKeysChange: (keys: APIKeys) => void;
 }
 
 export function Sidebar({
   currentSessionId,
   onSessionSelect,
   onSessionsRefresh: _onSessionsRefresh,
+  apiKeys,
+  onApiKeysChange,
 }: SidebarProps) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -61,6 +66,30 @@ export function Sidebar({
         <h1 className="text-2xl font-manrope font-700 text-libra-black">⚖️ LexAgent</h1>
         <p className="text-xs text-gray-600 mt-1">Legal Research AI Agent</p>
       </div>
+
+      {/* API Keys (optional) */}
+      <details className="px-2 py-2 border-b border-libra-border">
+        <summary className="flex items-center gap-2 text-xs font-manrope font-600 text-gray-600 cursor-pointer list-none">
+          API keys (optional)
+        </summary>
+        <div className="mt-2 space-y-2">
+          <input
+            type="password"
+            placeholder="OpenAI API Key"
+            value={apiKeys.openai ?? ''}
+            onChange={(e) => onApiKeysChange({ ...apiKeys, openai: e.target.value })}
+            className="w-full px-2 py-1.5 text-xs border border-libra-border rounded focus:outline-none focus:ring-1 focus:ring-libra-black"
+          />
+          <input
+            type="password"
+            placeholder="Tavily API Key"
+            value={apiKeys.tavily ?? ''}
+            onChange={(e) => onApiKeysChange({ ...apiKeys, tavily: e.target.value })}
+            className="w-full px-2 py-1.5 text-xs border border-libra-border rounded focus:outline-none focus:ring-1 focus:ring-libra-black"
+          />
+          <p className="text-[10px] text-gray-500">Leave blank to use server defaults.</p>
+        </div>
+      </details>
 
       {/* New Session Button */}
       <button
@@ -132,7 +161,8 @@ export function Sidebar({
       </div>
 
       {/* Footer */}
-      <div className="border-t border-libra-border px-4 py-3 flex gap-2">
+      <div className="mt-auto border-t border-libra-border px-4 py-3">
+        <div className="flex gap-2">
         <button
           onClick={() => loadSessions()}
           className="flex-1 flex items-center justify-center gap-2 px-3 py-2 border border-libra-border rounded-lg hover:bg-libra-light-gray transition-colors text-sm font-inter text-gray-700"
@@ -141,6 +171,7 @@ export function Sidebar({
           <RefreshCw className="w-4 h-4" />
           <span className="hidden sm:inline">Refresh</span>
         </button>
+        </div>
       </div>
     </div>
   );

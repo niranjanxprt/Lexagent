@@ -4,6 +4,8 @@ from pathlib import Path
 
 from tavily import TavilyClient
 
+from app.context import get_api_keys
+
 REPORTS_DIR = Path(__file__).parent.parent / "reports"
 
 
@@ -16,8 +18,11 @@ def search_web(query: str) -> dict:
     Search the web using Tavily and return raw results.
     The agent layer is responsible for compressing these into
     context notes — raw results are never stored in AgentState.
+    Uses TAVILY_API_KEY from env, or request-scoped override from context.
     """
-    client = TavilyClient(api_key=os.environ.get("TAVILY_API_KEY", ""))
+    api_keys = get_api_keys()
+    tavily_key = api_keys.get("tavily") or os.environ.get("TAVILY_API_KEY", "")
+    client = TavilyClient(api_key=tavily_key)
     response = client.search(
         query=query,
         max_results=5,

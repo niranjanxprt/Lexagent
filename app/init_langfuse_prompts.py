@@ -6,7 +6,6 @@ Usage:
     uv run python app/init_langfuse_prompts.py
 """
 
-import os
 from dotenv import load_dotenv
 from langfuse import get_client
 

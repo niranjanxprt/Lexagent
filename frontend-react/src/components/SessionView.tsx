@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Trash2, AlertCircle, Loader2 } from 'lucide-react';
 import { fetchAgentState, deleteSession } from '../lib/api';
+import type { APIKeys } from '../lib/api';
 import { AgentState } from '../types';
 import { TaskCard } from './TaskCard';
 import { FinalReport } from './FinalReport';
@@ -9,11 +10,12 @@ import { formatSessionId } from '../utils/format';
 
 interface SessionViewProps {
   sessionId: string;
+  apiKeys: APIKeys;
   onSessionDeleted: () => void;
   onRefresh?: () => void;
 }
 
-export function SessionView({ sessionId, onSessionDeleted, onRefresh: _onRefresh }: SessionViewProps) {
+export function SessionView({ sessionId, apiKeys, onSessionDeleted, onRefresh: _onRefresh }: SessionViewProps) {
   const [state, setState] = useState<AgentState | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -156,6 +158,7 @@ export function SessionView({ sessionId, onSessionDeleted, onRefresh: _onRefresh
           <h2 className="text-xl font-manrope font-700 text-libra-black">Execution Controls</h2>
           <ExecutionControls
             sessionId={state.session_id}
+            apiKeys={apiKeys}
             isActive={state.is_active}
             onExecutionComplete={loadState}
           />

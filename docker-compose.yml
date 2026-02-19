@@ -1,0 +1,19 @@
+# Local development: backend (API + React)
+# Usage: docker compose up --build
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8000
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - PORT=8000
+    volumes:
+      - ./data:/app/data
+      - ./reports:/app/reports
+      - ./.cursor:/app/.cursor

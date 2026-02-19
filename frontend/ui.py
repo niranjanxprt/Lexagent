@@ -182,6 +182,20 @@ if st.sidebar.button("New Session"):
     st.session_state.pop("session_state", None)
     st.rerun()
 
+# Optional API keys (override backend env vars)
+with st.sidebar.expander("API keys (optional)", expanded=False):
+    openai_key = st.text_input("OpenAI API Key", type="password", key="openai_key", placeholder="sk-...")
+    tavily_key = st.text_input("Tavily API Key", type="password", key="tavily_key", placeholder="tvly-...")
+    st.caption("Leave blank to use server defaults.")
+
+def _api_headers():
+    h = {}
+    if st.session_state.get("openai_key", "").strip():
+        h["X-OpenAI-API-Key"] = st.session_state["openai_key"].strip()
+    if st.session_state.get("tavily_key", "").strip():
+        h["X-Tavily-API-Key"] = st.session_state["tavily_key"].strip()
+    return h
+
 # Load all sessions for sidebar navigation
 try:
     sessions_resp = httpx.get(f"{API_URL}/sessions", timeout=10)
@@ -233,9 +247,11 @@ if "session_id" not in st.session_state:
         else:
             with st.spinner("Generating research plan..."):
                 try:
+                    headers = {"Content-Type": "application/json", **_api_headers()}
                     resp = httpx.post(
                         f"{API_URL}/agent/start",
                         json={"goal": goal.strip()},
+                        headers=headers,
                         timeout=60,
                     )
                     if resp.status_code == 201:
@@ -315,7 +331,7 @@ else:
             # Create columns for report header and download button
             col_report, col_download = st.columns([4, 1])
             with col_report:
-                st.success(f"Report ready for download")
+                st.success("Report ready for download")
             with col_download:
                 st.download_button(
                     label="📥 Download MD",
@@ -345,6 +361,7 @@ else:
                     try:
                         exec_resp = httpx.post(
                             f"{API_URL}/agent/{session_id}/execute",
+                            headers=_api_headers(),
                             timeout=120,
                         )
                         if exec_resp.status_code == 200:
@@ -368,6 +385,7 @@ else:
                 try:
                     exec_resp = httpx.post(
                         f"{API_URL}/agent/{session_id}/execute",
+                        headers=_api_headers(),
                         timeout=120,
                     )
                     if exec_resp.status_code == 200:

@@ -28,27 +28,27 @@ vi.mock('../lib/api', () => ({
 describe('NewSession Component', () => {
   it('should render the component', () => {
     const onSessionCreated = vi.fn();
-    render(<NewSession onSessionCreated={onSessionCreated} />);
+    render(<NewSession apiKeys={{}} onSessionCreated={onSessionCreated} />);
     expect(screen.getByRole('button')).toBeInTheDocument();
   });
 
   it('should have textarea for goal input', () => {
     const onSessionCreated = vi.fn();
-    render(<NewSession onSessionCreated={onSessionCreated} />);
+    render(<NewSession apiKeys={{}} onSessionCreated={onSessionCreated} />);
     const textarea = screen.getByRole('textbox');
     expect(textarea).toBeInTheDocument();
   });
 
   it('should display placeholder text', () => {
     const onSessionCreated = vi.fn();
-    render(<NewSession onSessionCreated={onSessionCreated} />);
+    render(<NewSession apiKeys={{}} onSessionCreated={onSessionCreated} />);
     const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
     expect(textarea.placeholder).toContain('AI-generated evidence');
   });
 
   it('should update textarea value when typing', () => {
     const onSessionCreated = vi.fn();
-    render(<NewSession onSessionCreated={onSessionCreated} />);
+    render(<NewSession apiKeys={{}} onSessionCreated={onSessionCreated} />);
     const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
 
     fireEvent.change(textarea, { target: { value: 'Research AI Act compliance' } });
@@ -57,7 +57,7 @@ describe('NewSession Component', () => {
 
   it('should have a button to generate plan', () => {
     const onSessionCreated = vi.fn();
-    render(<NewSession onSessionCreated={onSessionCreated} />);
+    render(<NewSession apiKeys={{}} onSessionCreated={onSessionCreated} />);
     const button = screen.getByRole('button');
     expect(button).toBeInTheDocument();
     expect(button.textContent).toContain('Generate Research Plan');
@@ -65,7 +65,7 @@ describe('NewSession Component', () => {
 
   it('should show error when submitting empty goal', async () => {
     const onSessionCreated = vi.fn();
-    render(<NewSession onSessionCreated={onSessionCreated} />);
+    render(<NewSession apiKeys={{}} onSessionCreated={onSessionCreated} />);
     const button = screen.getByRole('button') as HTMLButtonElement;
 
     // Button should not be disabled initially (only disabled during loading)
@@ -82,7 +82,7 @@ describe('NewSession Component', () => {
 
   it('should disable button when loading', async () => {
     const onSessionCreated = vi.fn();
-    render(<NewSession onSessionCreated={onSessionCreated} />);
+    render(<NewSession apiKeys={{}} onSessionCreated={onSessionCreated} />);
     const button = screen.getByRole('button') as HTMLButtonElement;
     const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
 

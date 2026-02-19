@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { executeStep } from '../lib/api';
+import type { APIKeys } from '../lib/api';
 
 interface ExecutionControlsProps {
   sessionId: string;
+  apiKeys: APIKeys;
   isActive: boolean;
   onExecutionComplete: () => void;
 }
 
 export function ExecutionControls({
   sessionId,
+  apiKeys,
   isActive,
   onExecutionComplete,
 }: ExecutionControlsProps) {
@@ -29,7 +32,7 @@ export function ExecutionControls({
         if (!isMounted) return;
 
         setLoading(true);
-        await executeStep(sessionId);
+        await executeStep(sessionId, apiKeys);
 
         if (!isMounted) return;
 
@@ -62,7 +65,7 @@ export function ExecutionControls({
         clearTimeout(timeoutId);
       }
     };
-  }, [autoRun, isActive, sessionId, onExecutionComplete]);
+  }, [autoRun, isActive, sessionId, apiKeys, onExecutionComplete]);
 
   useEffect(() => {
     if (!isActive) {
@@ -75,7 +78,7 @@ export function ExecutionControls({
     setError(null);
 
     try {
-      await executeStep(sessionId);
+      await executeStep(sessionId, apiKeys);
       onExecutionComplete();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to execute step.';

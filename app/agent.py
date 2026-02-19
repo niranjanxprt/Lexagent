@@ -5,13 +5,13 @@ from dotenv import load_dotenv
 from langfuse import get_client, observe
 from langfuse.openai import openai
 
+from app.context import get_api_keys
 from app.models import AgentState, Task
-from app.tools import save_report, search_web
 from app.security import (
-    validate_all_variables,
-    validate_context_notes,
     PromptInjectionError,
+    validate_context_notes,
 )
+from app.tools import save_report, search_web
 
 load_dotenv()
 
@@ -43,10 +43,14 @@ def call_llm(
         trace_name: Optional name for tracing
         langfuse_prompt: Optional Langfuse prompt object for linking to traces
     """
+    api_keys = get_api_keys()
+    openai_key = api_keys.get("openai") or os.environ.get("OPENAI_API_KEY")
     kwargs = {
         "model": os.environ.get("OPENAI_MODEL", "gpt-4o-mini"),
         "messages": messages,
     }
+    if openai_key:
+        kwargs["api_key"] = openai_key
     if use_json:
         kwargs["response_format"] = {"type": "json_object"}
 
@@ -97,7 +101,7 @@ def execute_task(task: Task, state: AgentState) -> Task:
     try:
         context_notes_validated = validate_context_notes(state.context_notes or [])
     except PromptInjectionError as e:
-        raise PromptInjectionError(f"Context validation failed: {e}")
+        raise PromptInjectionError(f"Context validation failed: {e}") from e
 
     context_blob = "\n".join(context_notes_validated) if context_notes_validated else "No prior context."
     refine_prompt = langfuse.get_prompt("legal-research/refine-query", type="chat")

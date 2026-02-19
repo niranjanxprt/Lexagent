@@ -76,6 +76,17 @@ make react
 # UI: http://localhost:5173
 ```
 
+### Local Docker (API + React)
+
+Run the full stack (backend serving API and React) in Docker:
+
+```bash
+docker compose up --build
+```
+
+- **URL**: http://localhost:8000 (API + React UI)
+- Ensure `.env` contains `OPENAI_API_KEY` and `TAVILY_API_KEY`
+
 ---
 
 ## How the Agent Loop Works

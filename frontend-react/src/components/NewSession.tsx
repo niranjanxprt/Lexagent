@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { startSession } from '../lib/api';
+import type { APIKeys } from '../lib/api';
 
 interface NewSessionProps {
+  apiKeys: APIKeys;
   onSessionCreated: (sessionId: string) => void;
 }
 
-export function NewSession({ onSessionCreated }: NewSessionProps) {
+export function NewSession({ apiKeys, onSessionCreated }: NewSessionProps) {
   const [goal, setGoal] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +24,7 @@ export function NewSession({ onSessionCreated }: NewSessionProps) {
     setError(null);
 
     try {
-      const { session_id } = await startSession(goal);
+      const { session_id } = await startSession(goal, apiKeys);
       setGoal('');
       onSessionCreated(session_id);
     } catch (err) {
