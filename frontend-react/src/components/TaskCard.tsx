@@ -16,7 +16,7 @@ const statusConfig = {
 
 export function TaskCard({ task, taskNumber }: TaskCardProps) {
   const [isOpen, setIsOpen] = useState(task.status === 'in_progress');
-  const config = statusConfig[task.status];
+  const config = statusConfig[task.status as keyof typeof statusConfig] ?? statusConfig.pending;
 
   return (
     <div className="border border-libra-border rounded-lg overflow-hidden bg-white hover:border-libra-dark-gray transition-colors">

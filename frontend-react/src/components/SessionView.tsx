@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Trash2, Loader2 } from 'lucide-react';
 import { fetchAgentState, deleteSession } from '../lib/api';
 import type { APIKeys } from '../types';
@@ -21,7 +21,7 @@ export function SessionView({ sessionId, apiKeys, onSessionDeleted }: SessionVie
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const loadState = async () => {
+  const loadState = useCallback(async () => {
     try {
       setError(null);
       const data = await fetchAgentState(sessionId);
@@ -36,11 +36,11 @@ export function SessionView({ sessionId, apiKeys, onSessionDeleted }: SessionVie
     } finally {
       setLoading(false);
     }
-  };
+  }, [sessionId]);
 
   useEffect(() => {
     loadState();
-  }, [sessionId]);
+  }, [loadState]);
 
   const handleDelete = async () => {
     if (!window.confirm('Are you sure you want to delete this session? This action cannot be undone.')) {

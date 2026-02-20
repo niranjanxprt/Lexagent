@@ -102,6 +102,7 @@ export async function deleteSession(sessionId: string): Promise<void> {
   }
 }
 
+/** Report endpoint returns plain Markdown (text/markdown), not JSON. Use .text() only. */
 export async function fetchReport(sessionId: string): Promise<string> {
   try {
     const response = await fetch(`${API_URL}/agent/${sessionId}/report`);
