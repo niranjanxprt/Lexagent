@@ -18,6 +18,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app/ ./app/
 COPY --from=frontend /app/frontend-react/dist ./static
+COPY start.sh ./
+RUN chmod +x start.sh
 
 ENV PYTHONUNBUFFERED=1
 EXPOSE 8000
