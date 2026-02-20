@@ -1,5 +1,10 @@
 // LexAgent TypeScript types matching backend Pydantic models
 
+export interface APIKeys {
+  openai?: string;
+  tavily?: string;
+}
+
 export type TaskStatus = 'pending' | 'in_progress' | 'done' | 'failed';
 export type AgentMode = 'plan' | 'execute' | 'done';
 

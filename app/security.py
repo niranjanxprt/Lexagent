@@ -182,46 +182,6 @@ def validate_search_results(results: dict) -> dict:
     return {"results": sanitized_results}
 
 
-def validate_llm_output(output: str) -> str:
-    """
-    Validate LLM output for safety before storing.
-
-    This is a defensive check to catch any malicious content
-    that might somehow be returned by the LLM.
-
-    Args:
-        output: LLM output text
-
-    Returns:
-        Validated output
-
-    Raises:
-        PromptInjectionError: If output contains suspicious content
-    """
-    if not isinstance(output, str):
-        raise PromptInjectionError(f"LLM output must be string, got {type(output)}")
-
-    # LLM output is generally trusted, but we can check for:
-    # - Executable code patterns (as a warning sign)
-    # - Suspicious control sequences
-
-    # Check for code execution patterns that shouldn't be in a legal report
-    code_patterns = [
-        r"(?i)(bash|python|shell|exec|eval|subprocess)\s*[\(\[]",
-        r"(?i)import\s+(os|sys|subprocess|socket)",
-    ]
-
-    # This is lenient - we allow these since LLM might reference code
-    # but log a warning in production
-    for pattern in code_patterns:
-        if re.search(pattern, output):
-            # In production, log this as a warning
-            # For now, we allow it but could raise if needed
-            pass
-
-    return output
-
-
 def validate_all_variables(
     goal: str | None = None,
     task_title: str | None = None,

@@ -1,7 +1,6 @@
 import json
 import os
 
-from dotenv import load_dotenv
 from langfuse import get_client, observe
 from langfuse.openai import openai
 
@@ -9,11 +8,10 @@ from app.context import get_api_keys
 from app.models import AgentState, Task
 from app.security import (
     PromptInjectionError,
+    sanitize_user_input,
     validate_context_notes,
 )
 from app.tools import save_report, search_web
-
-load_dotenv()
 
 langfuse = get_client()
 
@@ -97,17 +95,19 @@ def execute_task(task: Task, state: AgentState) -> Task:
     """
 
     # Step 1 — Build search query from task context + prior notes
-    # Validate all variables before passing to prompts
+    # Sanitize and validate all variables before passing to prompts
     try:
+        task_title_safe = sanitize_user_input(task.title, max_length=500)
+        task_description_safe = sanitize_user_input(task.description, max_length=1000)
         context_notes_validated = validate_context_notes(state.context_notes or [])
     except PromptInjectionError as e:
-        raise PromptInjectionError(f"Context validation failed: {e}") from e
+        raise ValueError(f"Invalid input: {e}") from e
 
     context_blob = "\n".join(context_notes_validated) if context_notes_validated else "No prior context."
     refine_prompt = langfuse.get_prompt("legal-research/refine-query", type="chat")
     query_prompt_messages = refine_prompt.compile(
-        task_title=task.title,
-        task_description=task.description,
+        task_title=task_title_safe,
+        task_description=task_description_safe,
         context_notes=context_blob,
     )
     search_query = call_llm(
@@ -130,7 +130,7 @@ def execute_task(task: Task, state: AgentState) -> Task:
     # Step 3 — Compress raw results (NEVER stored in state)
     compress_prompt = langfuse.get_prompt("legal-research/compress-results", type="chat")
     compression_messages = compress_prompt.compile(
-        task_title=task.title,
+        task_title=task_title_safe,
         search_results="\n\n".join(snippets),
     )
     compressed_summary = call_llm(
@@ -142,7 +142,7 @@ def execute_task(task: Task, state: AgentState) -> Task:
     # Step 4 — Reflect: did this task answer its goal?
     reflect_prompt = langfuse.get_prompt("legal-research/reflect", type="chat")
     reflection_messages = reflect_prompt.compile(
-        task_description=task.description,
+        task_description=task_description_safe,
         findings=compressed_summary,
     )
     reflection = call_llm(

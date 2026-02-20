@@ -1,21 +1,21 @@
 import { useState, useEffect } from 'react';
-import { Trash2, AlertCircle, Loader2 } from 'lucide-react';
+import { Trash2, Loader2 } from 'lucide-react';
 import { fetchAgentState, deleteSession } from '../lib/api';
-import type { APIKeys } from '../lib/api';
+import type { APIKeys } from '../types';
 import { AgentState } from '../types';
 import { TaskCard } from './TaskCard';
 import { FinalReport } from './FinalReport';
 import { ExecutionControls } from './ExecutionControls';
+import { ErrorMessage } from './ErrorMessage';
 import { formatSessionId } from '../utils/format';
 
 interface SessionViewProps {
   sessionId: string;
   apiKeys: APIKeys;
   onSessionDeleted: () => void;
-  onRefresh?: () => void;
 }
 
-export function SessionView({ sessionId, apiKeys, onSessionDeleted, onRefresh: _onRefresh }: SessionViewProps) {
+export function SessionView({ sessionId, apiKeys, onSessionDeleted }: SessionViewProps) {
   const [state, setState] = useState<AgentState | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,13 +73,7 @@ export function SessionView({ sessionId, apiKeys, onSessionDeleted, onRefresh: _
   if (error || !state) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-300 rounded-lg">
-          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <h3 className="font-manrope font-600 text-red-700">Error</h3>
-            <p className="text-sm text-red-700 font-inter mt-1">{error}</p>
-          </div>
-        </div>
+        <ErrorMessage message={error ?? 'Session not found.'} />
       </div>
     );
   }

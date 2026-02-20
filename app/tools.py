@@ -9,10 +9,6 @@ from app.context import get_api_keys
 REPORTS_DIR = Path(__file__).parent.parent / "reports"
 
 
-def _ensure_reports_dir() -> None:
-    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-
-
 def search_web(query: str) -> dict:
     """
     Search the web using Tavily and return raw results.
@@ -46,7 +42,7 @@ def save_report(session_id: str, goal: str, content: str) -> str:
     Save a markdown report to /reports/{session_id}.md.
     Returns the file path as a string.
     """
-    _ensure_reports_dir()
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     filename = f"{session_id}.md"
     path = REPORTS_DIR / filename
     timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")

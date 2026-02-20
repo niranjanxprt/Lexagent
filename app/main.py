@@ -163,7 +163,17 @@ def execute_step(session_id: str, req: Request):
     task.status = "in_progress"
     save_session(state)
 
-    executed_task = execute_task(task, state)
+    try:
+        executed_task = execute_task(task, state)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception:
+        task.status = "failed"
+        save_session(state)
+        raise HTTPException(
+            status_code=500,
+            detail="Task execution failed; task marked as failed.",
+        ) from None
 
     # Update the task in state.tasks by index
     for i, t in enumerate(state.tasks):

@@ -1,11 +1,8 @@
-import { AgentState, ExecuteResponse, GoalRequest, Session } from '../types';
+import { AgentState, APIKeys, ExecuteResponse, GoalRequest, Session } from '../types';
+
+export type { APIKeys } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
-export interface APIKeys {
-  openai?: string;
-  tavily?: string;
-}
 
 function headersWithApiKeys(apiKeys?: APIKeys | null): Record<string, string> {
   const h: Record<string, string> = {};

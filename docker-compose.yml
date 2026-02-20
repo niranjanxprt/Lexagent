@@ -16,4 +16,3 @@ services:
     volumes:
       - ./data:/app/data
       - ./reports:/app/reports
-      - ./.cursor:/app/.cursor

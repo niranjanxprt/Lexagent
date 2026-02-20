@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { executeStep } from '../lib/api';
-import type { APIKeys } from '../lib/api';
+import type { APIKeys } from '../types';
+import { ErrorMessage } from './ErrorMessage';
 
 interface ExecutionControlsProps {
   sessionId: string;
@@ -120,11 +121,7 @@ export function ExecutionControls({
         </div>
       )}
 
-      {error && (
-        <div className="p-3 bg-red-50 border border-red-300 rounded-lg">
-          <p className="text-sm text-red-700 font-inter">{error}</p>
-        </div>
-      )}
+      {error && <ErrorMessage message={error} />}
     </div>
   );
 }

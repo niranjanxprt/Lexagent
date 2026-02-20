@@ -2,12 +2,12 @@ import { AlertCircle, X } from 'lucide-react'
 import { useState } from 'react'
 
 interface ErrorMessageProps {
-  title: string
+  title?: string
   message: string
   onClose?: () => void
 }
 
-export default function ErrorMessage({ title, message, onClose }: ErrorMessageProps) {
+export function ErrorMessage({ title = 'Error', message, onClose }: ErrorMessageProps) {
   const [isVisible, setIsVisible] = useState(true)
 
   if (!isVisible) return null

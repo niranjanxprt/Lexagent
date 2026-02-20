@@ -1,14 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { fetchSessions, deleteSession } from '../lib/api';
-import type { APIKeys } from '../lib/api';
+import type { APIKeys } from '../types';
 import { Session } from '../types';
 import { truncateText, formatDate } from '../utils/format';
 
 interface SidebarProps {
   currentSessionId: string | null;
   onSessionSelect: (sessionId: string | null) => void;
-  onSessionsRefresh?: () => void;
   apiKeys: APIKeys;
   onApiKeysChange: (keys: APIKeys) => void;
 }
@@ -16,26 +15,22 @@ interface SidebarProps {
 export function Sidebar({
   currentSessionId,
   onSessionSelect,
-  onSessionsRefresh: _onSessionsRefresh,
   apiKeys,
   onApiKeysChange,
 }: SidebarProps) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const loadSessions = async () => {
+  const loadSessions = useCallback(async () => {
     const data = await fetchSessions();
     setSessions(data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
-  };
+  }, []);
 
   useEffect(() => {
     loadSessions();
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(loadSessions, 10000); // Refresh every 10 seconds
+    const interval = setInterval(loadSessions, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [loadSessions]);
 
   const getStatusBadge = (session: Session): string => {
     if (!session.is_active) {

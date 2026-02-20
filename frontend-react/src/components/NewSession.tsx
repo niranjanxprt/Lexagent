@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { startSession } from '../lib/api';
-import type { APIKeys } from '../lib/api';
+import type { APIKeys } from '../types';
+import { ErrorMessage } from './ErrorMessage';
 
 interface NewSessionProps {
   apiKeys: APIKeys;
@@ -63,11 +64,7 @@ export function NewSession({ apiKeys, onSessionCreated }: NewSessionProps) {
           <p className="text-xs text-gray-600 mt-2">Be specific about your research question for better results.</p>
         </div>
 
-        {error && (
-          <div className="p-4 bg-red-50 border border-red-300 rounded-lg">
-            <p className="text-sm text-red-700 font-inter">{error}</p>
-          </div>
-        )}
+        {error && <ErrorMessage message={error} />}
 
         <button
           type="submit"

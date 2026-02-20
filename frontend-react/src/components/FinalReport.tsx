@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Download, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
+import { Download, ChevronDown, ChevronUp } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { fetchReport } from '../lib/api';
 import { downloadMarkdown } from '../utils/format';
+import { ErrorMessage } from './ErrorMessage';
 
 interface FinalReportProps {
   sessionId: string;
-  reportPath: string | null | undefined;
+  reportPath: string | null;
 }
 
 export function FinalReport({ sessionId, reportPath }: FinalReportProps) {
@@ -47,15 +48,7 @@ export function FinalReport({ sessionId, reportPath }: FinalReportProps) {
   }
 
   if (error && !report) {
-    return (
-      <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-300 rounded-lg">
-        <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-        <div>
-          <p className="font-manrope font-600 text-red-700 mb-1">Report Error</p>
-          <p className="text-sm text-red-700 font-inter">{error}</p>
-        </div>
-      </div>
-    );
+    return <ErrorMessage title="Report Error" message={error} />;
   }
 
   if (!reportPath || !report) {
@@ -113,10 +106,7 @@ export function FinalReport({ sessionId, reportPath }: FinalReportProps) {
       {/* Rendered Report */}
       <div className="prose prose-sm max-w-none bg-white border border-libra-border rounded-lg p-6">
         {error ? (
-          <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-300 rounded">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-red-700 font-inter">{error}</p>
-          </div>
+          <ErrorMessage message={error} />
         ) : (
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
