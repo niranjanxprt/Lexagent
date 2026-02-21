@@ -26,6 +26,11 @@ body {
   color: #1a1a1a;
 }
 
+/* Safe area for notched phones */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
 code {
   font-family: 'Courier New', monospace;
   background: #f5f5f5;

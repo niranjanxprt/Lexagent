@@ -81,15 +81,15 @@ export function FinalReport({ sessionId, reportPath }: FinalReportProps) {
   return (
     <div className="space-y-6">
       {/* Report header + Download + Copy */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="md:col-span-2 flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-300 rounded-lg">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+        <div className="flex-1 flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-300 rounded-lg">
           <span className="text-xl">✅</span>
           <span className="text-sm font-inter font-600 text-green-700">Report ready for download</span>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-shrink-0">
           <button
             onClick={handleCopy}
-            className="flex-1 px-4 py-3 bg-libra-black text-white rounded-lg font-manrope font-600 text-sm hover:bg-libra-dark-gray transition-colors flex items-center justify-center gap-2"
+            className="flex-1 min-w-0 min-h-[44px] px-4 py-3 bg-libra-black text-white rounded-lg font-manrope font-600 text-sm hover:bg-libra-dark-gray transition-colors flex items-center justify-center gap-2 touch-manipulation"
           >
             {copied ? (
               <>
@@ -105,7 +105,7 @@ export function FinalReport({ sessionId, reportPath }: FinalReportProps) {
           </button>
           <button
             onClick={handleDownload}
-            className="flex-1 px-4 py-3 bg-libra-black text-white rounded-lg font-manrope font-600 text-sm hover:bg-libra-dark-gray transition-colors flex items-center justify-center gap-2"
+            className="flex-1 min-w-0 min-h-[44px] px-4 py-3 bg-libra-black text-white rounded-lg font-manrope font-600 text-sm hover:bg-libra-dark-gray transition-colors flex items-center justify-center gap-2 touch-manipulation"
           >
             <Download className="w-4 h-4" />
             Download MD

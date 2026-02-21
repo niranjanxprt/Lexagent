@@ -51,7 +51,7 @@ function ContextNotesSection({ notes }: { notes: string[] }) {
           <div className="flex justify-end">
             <button
               onClick={handleCopy}
-              className="flex items-center gap-2 px-4 py-2 bg-libra-black text-white rounded-lg font-manrope font-600 text-sm hover:bg-libra-dark-gray transition-colors"
+              className="flex items-center gap-2 px-4 py-2 min-h-[44px] bg-libra-black text-white rounded-lg font-manrope font-600 text-sm hover:bg-libra-dark-gray transition-colors touch-manipulation"
             >
               {copied ? (
                 <>
@@ -151,7 +151,7 @@ export function SessionView({ sessionId, apiKeys, onSessionDeleted }: SessionVie
   const statusBadge = !state.is_active ? 'DONE' : `Step ${state.current_step}/${state.tasks.length}`;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8">
       {/* Goal Card */}
       <div className="p-6 bg-libra-light-gray border border-libra-border rounded-lg">
         <h2 className="text-sm font-manrope font-600 text-gray-600 uppercase tracking-wide mb-2">
@@ -161,7 +161,7 @@ export function SessionView({ sessionId, apiKeys, onSessionDeleted }: SessionVie
       </div>
 
       {/* Metrics */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <div className="px-6 py-4 bg-white border border-libra-border rounded-lg">
           <p className="text-xs font-manrope font-600 text-gray-600 uppercase tracking-wide">Session ID</p>
           <p className="text-xl font-manrope font-700 text-libra-black mt-2">{formatSessionId(state.session_id)}</p>
@@ -225,7 +225,7 @@ export function SessionView({ sessionId, apiKeys, onSessionDeleted }: SessionVie
         <button
           onClick={handleDelete}
           disabled={deleting}
-          className="flex items-center justify-center gap-2 px-6 py-3 bg-red-50 border border-red-300 text-red-700 rounded-lg font-manrope font-600 text-sm hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center justify-center gap-2 px-6 py-3 min-h-[44px] bg-red-50 border border-red-300 text-red-700 rounded-lg font-manrope font-600 text-sm hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
         >
           {deleting ? (
             <>

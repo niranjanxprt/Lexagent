@@ -96,7 +96,7 @@ export function ExecutionControls({
         <button
           onClick={handleExecuteNext}
           disabled={!isActive || loading}
-          className="flex-1 px-6 py-3 bg-libra-black text-white rounded-lg font-manrope font-600 text-sm hover:bg-libra-dark-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="flex-1 px-6 py-3 min-h-[48px] bg-libra-black text-white rounded-lg font-manrope font-600 text-sm hover:bg-libra-dark-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 touch-manipulation"
         >
           {loading && <Loader2 className="w-4 h-4 animate-spin" />}
           {loading ? 'Executing...' : 'Execute Next Step'}

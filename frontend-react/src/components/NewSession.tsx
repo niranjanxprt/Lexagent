@@ -37,9 +37,9 @@ export function NewSession({ apiKeys, onSessionCreated }: NewSessionProps) {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-12">
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
       <div className="mb-8">
-        <h2 className="text-3xl font-manrope font-700 text-libra-black mb-2">
+        <h2 className="text-2xl sm:text-3xl font-manrope font-700 text-libra-black mb-2">
           Start a New Research Session
         </h2>
         <p className="text-gray-600 font-inter">
@@ -69,7 +69,7 @@ export function NewSession({ apiKeys, onSessionCreated }: NewSessionProps) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full px-6 py-3 bg-libra-black text-white rounded-lg font-manrope font-600 text-sm hover:bg-libra-dark-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full px-6 py-3 min-h-[48px] bg-libra-black text-white rounded-lg font-manrope font-600 text-sm hover:bg-libra-dark-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 touch-manipulation"
         >
           {loading && <Loader2 className="w-4 h-4 animate-spin" />}
           {loading ? 'Generating Research Plan...' : 'Generate Research Plan'}

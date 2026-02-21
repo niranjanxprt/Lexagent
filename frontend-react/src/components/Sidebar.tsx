@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { Plus, RefreshCw, Trash2, X } from 'lucide-react';
 import { fetchSessions, deleteSession } from '../lib/api';
 import type { APIKeys } from '../types';
 import { Session } from '../types';
@@ -10,6 +10,7 @@ interface SidebarProps {
   onSessionSelect: (sessionId: string | null) => void;
   apiKeys: APIKeys;
   onApiKeysChange: (keys: APIKeys) => void;
+  onCloseMobile?: () => void;
 }
 
 export function Sidebar({
@@ -17,6 +18,7 @@ export function Sidebar({
   onSessionSelect,
   apiKeys,
   onApiKeysChange,
+  onCloseMobile,
 }: SidebarProps) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -57,9 +59,20 @@ export function Sidebar({
   return (
     <div className="w-60 bg-white border-r border-libra-border flex flex-col h-full">
       {/* Header */}
-      <div className="px-4 py-6 border-b border-libra-border">
-        <h1 className="text-2xl font-manrope font-700 text-libra-black">⚖️ LexAgent</h1>
-        <p className="text-xs text-gray-600 mt-1">Legal Research AI Agent</p>
+      <div className="px-4 py-6 border-b border-libra-border flex items-start justify-between gap-2">
+        <div>
+          <h1 className="text-2xl font-manrope font-700 text-libra-black">⚖️ LexAgent</h1>
+          <p className="text-xs text-gray-600 mt-1">Legal Research AI Agent</p>
+        </div>
+        {onCloseMobile && (
+          <button
+            onClick={onCloseMobile}
+            className="md:hidden flex-shrink-0 p-2 rounded-lg hover:bg-libra-light-gray transition-colors touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="Close menu"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
       {/* API Keys (optional) */}
@@ -89,7 +102,7 @@ export function Sidebar({
       {/* New Session Button */}
       <button
         onClick={() => onSessionSelect(null)}
-        className="m-4 w-[calc(100%-2rem)] flex items-center justify-center gap-2 px-4 py-2 border border-libra-border rounded-lg bg-white hover:bg-libra-light-gray transition-colors font-inter font-600 text-sm text-libra-black"
+        className="m-4 w-[calc(100%-2rem)] min-h-[44px] flex items-center justify-center gap-2 px-4 py-2 border border-libra-border rounded-lg bg-white hover:bg-libra-light-gray transition-colors font-inter font-600 text-sm text-libra-black touch-manipulation"
       >
         <Plus className="w-4 h-4" />
         New Session
