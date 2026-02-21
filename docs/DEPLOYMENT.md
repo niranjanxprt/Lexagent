@@ -54,10 +54,20 @@ bash scripts/verify_before_merge.sh
 
 This runs tests, lint, Docker build, and endpoint checks. Railway uses the same Dockerfile; no Streamlit—backend serves React at `/` and API at `/agent/*`.
 
-### Deploy
+### Railway step-by-step (first time)
 
-- **CLI:** `railway up` (from project root; uses `railway.toml` and Dockerfile).
-- **Git:** Connect the repo in Railway; pushes to the linked branch trigger a build. Build uses the same Dockerfile.
+1. **Init:** `railway init` (create or link project); `railway login`.
+2. **Variables:** `railway variables --set "OPENAI_API_KEY=..."` and `TAVILY_API_KEY`; add `LANGFUSE_SECRET_KEY`, `LANGFUSE_PUBLIC_KEY` (and optionally `LANGFUSE_BASE_URL`, `OPENAI_MODEL=gpt-4.1-mini`).
+3. **Deploy:** `railway up` (uses `railway.toml` and Dockerfile).
+4. **Domain:** `railway domain` or Dashboard → Settings → Networking → Generate Domain.
+5. **Volumes:** `railway volume add --mount-path /app/data` (and optionally `/app/reports`). Or Dashboard → Volumes → Add volume.
+
+See [CLI_LANGFUSE_RAILWAY.md](CLI_LANGFUSE_RAILWAY.md) for one-shot scripts. Connecting GitHub to Railway triggers deploys on push; variables and volumes are unchanged.
+
+### Deploy (ongoing)
+
+- **CLI:** `railway up` (from project root).
+- **Git:** Pushes to the linked branch trigger a build.
 
 ### Health check
 

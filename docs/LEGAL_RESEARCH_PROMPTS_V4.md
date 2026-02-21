@@ -75,6 +75,7 @@ Rules:
 - Include attribution for each key point in parentheses with source name and URL when present.
 - If multiple sources agree, cite the most authoritative source.
 - If sources conflict or evidence is weak/secondary, state: "Evidence on this point is limited/conflicting."
+- If search results are empty or contain no useful content, output exactly: "No results found for this query."
 
 Output plain text only: no bullet points and no markdown.
 ```
@@ -135,7 +136,7 @@ Rules:
 - When stating legal points, cite exactly as written in notes (for example: "Under GDPR Article 25..." or "BDSG §26 provides...").
 - In Key Findings, group by topic using ### subheadings.
 - If support is uncertain or secondary, label it: "(secondary source - verify against primary legislation)".
-- In Sources, list only URLs present in the research notes, one per line.
+- In Sources, list every URL from the "Source URLs" section below, one per line; include all links and do not omit any.
 - In Limitations, include exactly: "This report is for research purposes only and does not constitute legal advice."
 ```
 
@@ -149,4 +150,7 @@ Task Summaries:
 
 Detailed Research Notes:
 {{context_notes}}
+
+Source URLs (include every link in the report Sources section):
+{{source_urls}}
 ```

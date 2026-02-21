@@ -59,8 +59,9 @@ PROMPT_FALLBACKS: dict[str, list[dict]] = {
         {
             "role": "system",
             "content": (
-                "Summarize the search results in 2–3 sentences. Keep article/section refs exact (e.g. GDPR Article 5, BDSG §26); do not paraphrase. "
-                "Cite source in parentheses. Do not add content that wasn't in the results."
+                "Summarize the search results in 2–4 sentences. Keep article/section refs exact (e.g. GDPR Article 5, BDSG §26); do not paraphrase. "
+                "Cite source in parentheses. Do not add content that wasn't in the results. "
+                'If search results are empty or contain no useful content, output exactly: "No results found for this query."'
             ),
         },
         {
@@ -72,10 +73,15 @@ PROMPT_FALLBACKS: dict[str, list[dict]] = {
         {
             "role": "system",
             "content": (
-                "Check whether the findings fully answer the task. Return ONLY valid JSON, no markdown or prose. "
-                'Schema: {"status":"fully_addressed"|"partially_addressed"|"not_addressed","gap":"..."} '
-                'Use "fully_addressed" only when the core legal question is answered with source-backed support. '
-                'Otherwise set "gap" to the single most important missing element (max 20 words). Set "gap" to "" when fully_addressed.'
+                "Check whether the findings fully answer the task.\n\n"
+                "Output contract:\n"
+                "- Return ONLY valid JSON with no markdown, no code fences, and no prose.\n"
+                '- Exact schema: {"status":"fully_addressed"|"partially_addressed"|"not_addressed","gap":"..."}\n\n'
+                "Rules:\n"
+                '- Use "fully_addressed" only when the core legal question is answered with specific, source-backed support.\n'
+                '- Otherwise use "partially_addressed" or "not_addressed" and name the single most important gap in "gap" (max 20 words).\n'
+                '- Set "gap" to "" when status is "fully_addressed".\n'
+                "- Entire output must not exceed 40 words including JSON structure."
             ),
         },
         {"role": "user", "content": "Task: {{task_description}}\n\nFindings: {{findings}}"},
@@ -84,15 +90,32 @@ PROMPT_FALLBACKS: dict[str, list[dict]] = {
         {
             "role": "system",
             "content": (
-                "Draft a legal research report in Markdown: Executive Summary, Key Findings, Legal Implications, Limitations, Conclusion, Sources (key URLs). "
-                "Cite articles explicitly where relevant. Do not invent articles or sources not in the notes."
+                "Write a structured legal research report in Markdown using ONLY the provided research notes.\n\n"
+                "The very first characters of your output must be: ## Executive Summary\n"
+                "Do not write any preamble, introduction, or title before the first heading.\n\n"
+                "Required sections in this exact order:\n"
+                "## Executive Summary\n"
+                "## Key Findings\n"
+                "## Legal Implications\n"
+                "## Limitations\n"
+                "## Conclusion\n"
+                "## Sources\n\n"
+                "Rules:\n"
+                "- Do not introduce any legal authority, article, or case not present in the research notes.\n"
+                '- When stating legal points, cite exactly as written in notes (for example: "Under GDPR Article 25..." or "BDSG §26 provides...").\n'
+                "- In Key Findings, group by topic using ### subheadings.\n"
+                '- If support is uncertain or secondary, label it: "(secondary source - verify against primary legislation)".\n'
+                "- In Sources, list every URL from the 'Source URLs' section below, one per line. Include all links; do not omit any.\n"
+                '- In Limitations, include exactly: "This report is for research purposes only and does not constitute legal advice."'
             ),
         },
         {
             "role": "user",
             "content": (
-                "Research Goal: {{goal}}\n\nTask Summaries:\n{{task_summaries}}\n\n"
-                "Research Notes:\n{{context_notes}}"
+                "Research Goal: {{goal}}\n\n"
+                "Task Summaries:\n{{task_summaries}}\n\n"
+                "Detailed Research Notes:\n{{context_notes}}\n\n"
+                "Source URLs (include every link in the report Sources section):\n{{source_urls}}"
             ),
         },
     ],
@@ -267,8 +290,6 @@ def execute_task(task: Task, state: AgentState) -> Task:
 
     # Step 2 — Execute web search
     task.tool_used = "search_web"
-    # TODO: Add exponential backoff retry. Tavily occasionally times out on
-    # multi-word legal queries. Documented in Known Limitations.
     raw_results = search_web(search_query)
     raw_results = validate_search_results(raw_results)
 
@@ -306,6 +327,13 @@ def execute_task(task: Task, state: AgentState) -> Task:
     )
     task.reflection = reflect_result.gap.strip() or "Fully addressed."
     task.reflect_status = reflect_result.status
+    # Add reflect outcome as a Langfuse span attribute for filtering in dashboard
+    try:
+        get_client().update_current_observation(
+            metadata={"reflect_status": reflect_result.status, "reflect_gap": reflect_result.gap}
+        )
+    except Exception:
+        pass  # Langfuse unavailable; non-fatal
     if reflect_result.status != "fully_addressed":
         logger.warning(
             "task_incomplete",
@@ -339,13 +367,27 @@ def generate_final_report(state: AgentState) -> str:
     if len(context_blob) > 12000:
         context_blob = "...[earlier context truncated]\n" + context_blob[-11000:]
     task_summaries = "\n".join(
-        f"- **{t.title}**: {t.result or 'N/A'}" for t in state.tasks
+        f"- **{t.title}**: {t.result or 'N/A'}"
+        + (
+            f" *(partially addressed — {t.reflection})*"
+            if t.reflect_status != "fully_addressed"
+            else ""
+        )
+        for t in state.tasks
     )
+    # Collect all source URLs from tasks (order preserved, no duplicates)
+    all_urls: list[str] = []
+    for t in state.tasks:
+        for url in t.sources or []:
+            if url and url not in all_urls:
+                all_urls.append(url)
+    source_urls_blob = "\n".join(all_urls) if all_urls else "No URLs collected."
     report_prompt = get_prompt_safe("legal-research/generate-report", prompt_type="chat")
     messages = report_prompt.compile(
         goal=state.goal,
         task_summaries=task_summaries,
         context_notes=context_blob,
+        source_urls=source_urls_blob,
     )
     report_content = call_llm(
         messages,

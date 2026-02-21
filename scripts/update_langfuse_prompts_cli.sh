@@ -11,7 +11,7 @@ if [ ! -f .env ]; then
   exit 1
 fi
 
-echo "Updating Langfuse prompts (Block D content)..."
+echo "Updating Langfuse prompts (V4)..."
 if command -v uv &>/dev/null; then
   uv run python app/init_langfuse_prompts.py
 else

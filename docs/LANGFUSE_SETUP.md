@@ -81,6 +81,8 @@ When you pass `langfuse_prompt=prompt` to `call_llm()`, Langfuse automatically:
 
 ## Updating Prompts
 
+**Do changes in the Langfuse UI take effect?** Yes. The app fetches prompts from Langfuse at runtime (with a 60s cache). No code deploy is required. Edit in the UI → Save → add the `production` label to the new version; the running app will use the new version within about 60 seconds (or on next request after cache expiry).
+
 ### In Langfuse UI
 
 1. Go to **Prompt Management**
@@ -116,6 +118,7 @@ Available variables by prompt:
 - `{{goal}}` - Original research goal
 - `{{task_summaries}}` - Bulleted list of task results
 - `{{context_notes}}` - All accumulated research notes
+- `{{source_urls}}` - All source URLs from tasks (one per line; include every link in report Sources)
 
 ## Caching Behavior
 

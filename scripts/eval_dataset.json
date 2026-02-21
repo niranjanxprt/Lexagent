@@ -1,0 +1,17 @@
+[
+  {
+    "id": "gdpr-ai",
+    "goal": "What are the key GDPR requirements for deploying AI systems in Germany?",
+    "expected_keywords": ["GDPR", "Article", "BDSG"]
+  },
+  {
+    "id": "eu-ai-act",
+    "goal": "What obligations apply to high-risk AI systems under the EU AI Act?",
+    "expected_keywords": ["AI Act", "high-risk", "Article"]
+  },
+  {
+    "id": "employee-monitoring",
+    "goal": "What data protection rules apply to employee monitoring software in Germany?",
+    "expected_keywords": ["BDSG", "data protection", "employee"]
+  }
+]

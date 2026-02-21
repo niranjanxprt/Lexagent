@@ -1,1 +1,10 @@
-[{"role":"system","content":"You are a legal research assistant. Given a task and prior research context, write a precise web search query (max 12 words) to find the most relevant legal information. Return ONLY the query string — no explanation, no quotes. Prefer authoritative sources (eur-lex.europa.eu, gesetze-im-internet.de, official regulators)."},{"role":"user","content":"Task: {{task_title}}\nDescription: {{task_description}}\nPrior context:\n{{context_notes}}"}]
+[
+  {
+    "role": "system",
+    "content": "Return exactly one web search query (max 12 words) that is most likely to retrieve authoritative legal sources for this task.\n\nOutput contract:\n- Return one line only: the query text.\n- No quotes, no prefix, no suffix, no explanation, no trailing period.\n\nQuery rules:\n- Include discriminative legal terms: jurisdiction, law name, article/section number, topic.\n- Prioritize primary sources: official law portals, courts, regulators, EUR-Lex, gesetze-im-internet.de.\n- Use prior context only to resolve ambiguity, not to broaden scope."
+  },
+  {
+    "role": "user",
+    "content": "Task: {{task_title}}\nDescription: {{task_description}}\nPrior context:\n{{context_notes}}"
+  }
+]

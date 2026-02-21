@@ -14,7 +14,7 @@ You can update Langfuse prompts and configure Railway (volumes, variables) from 
   - `LANGFUSE_SECRET_KEY=sk-lf-...`
   - Optionally `LANGFUSE_HOST=https://cloud.langfuse.com`
 
-### One-shot: update all prompts (Block D content)
+### One-shot: update all prompts (V4)
 
 From the repo root:
 
@@ -22,7 +22,7 @@ From the repo root:
 bash scripts/update_langfuse_prompts_cli.sh
 ```
 
-This runs `app/init_langfuse_prompts.py`, which creates a **new version** of each prompt with the Block D text and the **production** label (no compile task, authoritative sources, preserve article refs, one-sentence reflection, Sources section). No dashboard step needed.
+This runs `app/init_langfuse_prompts.py`, which creates a **new version** of each of the 5 prompts with the current V4 text and the **production** label. No dashboard step needed. Prompt content is defined in `app/init_langfuse_prompts.py`; see [LEGAL_RESEARCH_PROMPTS_V4.md](LEGAL_RESEARCH_PROMPTS_V4.md) for a single-file copy.
 
 ### Other useful commands
 
@@ -34,7 +34,7 @@ npx langfuse-cli --env .env api prompts list
 npx langfuse-cli --env .env api prompts get "legal-research/generate-plan" --json
 ```
 
-Prompt JSON files live in `scripts/prompts/` (one per prompt). Edit those files and re-run the script to push new content.
+To change prompt text: edit `app/init_langfuse_prompts.py` and re-run the script, or edit directly in the Langfuse UI (UI changes take effect without redeploy; see [LANGFUSE_SETUP.md](LANGFUSE_SETUP.md)).
 
 ---
 

@@ -36,7 +36,7 @@
 - Use `GET /health` for load balancer health checks
 - For production, restrict CORS to known frontend origins (demo uses `["*"]` for convenience)
 - Sessions and reports use `/app/data` and `/app/reports`; mount volumes there for persistence (e.g. Railway Volumes, Docker compose)
-- See [DEPLOYMENT.md](DEPLOYMENT.md) and [RAILWAY_DEPLOY.md](RAILWAY_DEPLOY.md) for Railway and local Docker
+- See [DEPLOYMENT.md](DEPLOYMENT.md) for Railway and local Docker
 
 ## Documentation
 

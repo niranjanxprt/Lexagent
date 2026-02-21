@@ -1,7 +1,9 @@
 import os
+import time
 from datetime import datetime
 from pathlib import Path
 
+from langfuse import observe
 from tavily import TavilyClient
 
 from app.context import get_api_keys
@@ -11,6 +13,7 @@ _DEFAULT_REPORTS = Path(__file__).parent.parent / "reports"
 REPORTS_DIR = Path(os.environ.get("LEXAGENT_REPORTS_DIR", str(_DEFAULT_REPORTS)))
 
 
+@observe(name="search-web", as_type="tool")
 def search_web(query: str) -> dict:
     """
     Search the web using Tavily and return raw results.
@@ -21,11 +24,21 @@ def search_web(query: str) -> dict:
     api_keys = get_api_keys()
     tavily_key = api_keys.get("tavily") or os.environ.get("TAVILY_API_KEY", "")
     client = TavilyClient(api_key=tavily_key)
-    response = client.search(
-        query=query,
-        max_results=5,
-        include_raw_content=False,
-    )
+    last_exc = None
+    for attempt in range(3):
+        try:
+            response = client.search(
+                query=query,
+                max_results=5,
+                include_raw_content=False,
+            )
+            break
+        except Exception as exc:
+            last_exc = exc
+            if attempt < 2:
+                time.sleep(2**attempt)  # 1s, 2s backoff
+    else:
+        raise last_exc
     results = []
     for r in response.get("results", []):
         results.append({

@@ -1,35 +1,35 @@
-# Remaining Tasks (Post–Pre-Submission Work)
+# Remaining Tasks
 
-Summary of what is **done** in the repo vs what is **left for you** (manual or external).
+Summary of what is **done** vs what is **left for you** (manual or external).
 
 ---
 
 ## Done (in this repo)
 
-- **Code:** `validate_search_results()` wired in; Langfuse fallback (`get_prompt_safe`); context length guards; `session_id` in `generate_plan()`; strategic comments; crash-recovery comment in `main.py`; `validate_all_variables` docstring.
-- **Docker:** `app/` and `scripts/` in image; `start.sh` for start; backend and React in docker-compose.
-- **Langfuse:** Block D prompts pushed via `app/init_langfuse_prompts.py` (run completed); new versions have production label.
-- **Docs:** README (Option A UV + Option B venv+pip, etc.); DEPLOYMENT.md; EVALUATION.md; RAILWAY_DEPLOY; TESTING; BEST_PRACTICES; LOCALHOST_TEST_LINKS; CLI_LANGFUSE_RAILWAY; REMAINING_TASKS; transcript (4-task plan, footnote, imperfect reflection). Redundant docs removed (TEST_AND_DOCKER_EXECUTION_REPORT, RAILWAY_* extras, REACT_FRONTEND_SUMMARY).
-- **Scripts:** All under `scripts/` (start.sh, update_langfuse_prompts_cli.sh, railway_setup_volume_and_vars.sh, prompts/*.json). Railway and Docker use `bash scripts/start.sh`.
+- **Code:** V4 prompts; Pydantic ResearchPlan, ReflectResult, Task.reflect_status; model split (gpt-4.1 for plan/report, gpt-4.1-mini for refine/compress/reflect); report includes all source URLs and flags partially-addressed tasks; compress empty-results guard; Langfuse fallback; context length guards; security validation. PROMPT_FALLBACKS and `scripts/prompts/*.json` are synced with `app/init_langfuse_prompts.py`. Observability: `@observe` on search_web, reflect_status/reflect_gap in Langfuse metadata. Tavily retry with exponential backoff in `app/tools.py`. Eval: `scripts/create_eval_dataset.py`, `scripts/run_eval.py` (reflect correctness + Langfuse scoring).
+- **Docker:** `app/` and `start.sh` in image; backend and React in docker-compose.
+- **Langfuse:** Prompts defined in `app/init_langfuse_prompts.py`; run `bash scripts/update_langfuse_prompts_cli.sh` to push new versions (they get the **production** label automatically). **Prompt sync completed:** code and Langfuse Prompt Management are in sync (all 5 prompts pushed with production label). Re-run the script after any change to `init_langfuse_prompts.py`. You can also edit prompts in the Langfuse UI — changes take effect without redeploy (see [LANGFUSE_SETUP.md](LANGFUSE_SETUP.md)).
+- **Docs:** README; DEPLOYMENT (includes Railway step-by-step); EVALUATION; TESTING; LANGFUSE_SETUP; CLI_LANGFUSE_RAILWAY; LEGAL_RESEARCH_PROMPTS_V4; SECURITY; BEST_PRACTICES; transcript. Redundant RAILWAY_DEPLOY merged into DEPLOYMENT.
+- **Scripts:** `scripts/update_langfuse_prompts_cli.sh`, `scripts/railway_setup_volume_and_vars.sh`, `start.sh`. Railway/Docker use `bash start.sh`.
 - **Tests:** `make test`, `make lint`, `make react-test` passing; Docker build succeeds.
 
 ---
 
 ## Remaining (for you to do)
 
-### 1. Langfuse (Block D) — CLI or dashboard
+### 1. Langfuse — keep in sync or edit in UI
 
-**Option A — CLI (recommended):** From repo root, run:
+**Status:** Code and Langfuse Prompt Management are currently in sync (all 5 prompts have been pushed with the **production** label).
+
+**CLI (push from code after editing prompts):** From repo root:
 ```bash
 bash scripts/update_langfuse_prompts_cli.sh
 ```
-Requires `.env` with `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY`. Creates new versions with Block D text. Then in the Langfuse dashboard, apply the **production** label to the new versions.
+Requires `.env` with `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY`. Creates new prompt versions with the **production** label. Verify: `npx langfuse-cli --env .env api prompts list`.
 
-**Option B — Dashboard:** Edit the 5 prompts in the Langfuse UI and add the same text; apply **production** label.
+**UI:** Edit the 5 prompts in the Langfuse dashboard; Save; add the **production** label to the new version. No app redeploy needed — the running app picks up changes (cache ~60s). See [LANGFUSE_SETUP.md](LANGFUSE_SETUP.md).
 
-Block D content: **generate-plan** — no final compile/synthesize task; **refine-query** — query only, authoritative sources; **compress-results** — preserve article refs (e.g. GDPR Art 5, BDSG §26); **reflect** — one sentence, state gap if not addressed; **generate-report** — Sources section, cite articles explicitly.
-
-See [docs/CLI_LANGFUSE_RAILWAY.md](CLI_LANGFUSE_RAILWAY.md) for full CLI usage.
+Prompt reference: [LEGAL_RESEARCH_PROMPTS_V4.md](LEGAL_RESEARCH_PROMPTS_V4.md). CLI details: [CLI_LANGFUSE_RAILWAY.md](CLI_LANGFUSE_RAILWAY.md).
 
 ### 2. Railway (A7) — CLI or dashboard
 
@@ -54,7 +54,7 @@ Or manually: `railway volume add --mount-path /app/data`. Optionally: `railway v
 
 | Area        | Where        | Action |
 |------------|--------------|--------|
-| Prompts    | CLI or UI    | `bash scripts/update_langfuse_prompts_cli.sh` then set `production` label in UI |
+| Prompts    | CLI or UI    | `bash scripts/update_langfuse_prompts_cli.sh` (applies production); or edit in Langfuse UI |
 | Persistence| CLI or UI    | `railway volume add -m /app/data` or Railway dashboard |
 | Model      | Railway vars | `railway variables --set OPENAI_MODEL=gpt-4.1-mini` (optional) |
 | Smoke test | Local/Docker | Health, /docs, full session with API keys |

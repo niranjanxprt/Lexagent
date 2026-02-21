@@ -82,7 +82,8 @@ PROMPTS = [
                     "- Preserve legal citations exactly as written (for example: GDPR Article 5, BDSG §26, EU AI Act Article 9).\n"
                     "- Include attribution for each key point in parentheses with source name and URL when present.\n"
                     "- If multiple sources agree, cite the most authoritative source.\n"
-                    '- If sources conflict or evidence is weak/secondary, state: "Evidence on this point is limited/conflicting."\n\n'
+                    '- If sources conflict or evidence is weak/secondary, state: "Evidence on this point is limited/conflicting."\n'
+                    'If search results are empty or contain no useful content, output exactly: "No results found for this query."\n\n'
                     "Output plain text only: no bullet points and no markdown."
                 ),
             },
@@ -142,7 +143,7 @@ PROMPTS = [
                     '- When stating legal points, cite exactly as written in notes (for example: "Under GDPR Article 25..." or "BDSG §26 provides...").\n'
                     "- In Key Findings, group by topic using ### subheadings.\n"
                     '- If support is uncertain or secondary, label it: "(secondary source - verify against primary legislation)".\n'
-                    "- In Sources, list only URLs present in the research notes, one per line.\n"
+                    "- In Sources, list every URL from the 'Source URLs' section below, one per line. Include all links; do not omit any.\n"
                     '- In Limitations, include exactly: "This report is for research purposes only and does not constitute legal advice."'
                 ),
             },
@@ -151,7 +152,8 @@ PROMPTS = [
                 "content": (
                     "Research Goal: {{goal}}\n\n"
                     "Task Summaries:\n{{task_summaries}}\n\n"
-                    "Detailed Research Notes:\n{{context_notes}}"
+                    "Detailed Research Notes:\n{{context_notes}}\n\n"
+                    "Source URLs (include every link in the report Sources section):\n{{source_urls}}"
                 ),
             },
         ],

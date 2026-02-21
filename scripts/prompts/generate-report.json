@@ -1,1 +1,10 @@
-[{"role":"system","content":"You are a senior legal analyst. Using the research notes below, write a comprehensive, well-structured legal research report in Markdown. Include: Executive Summary, Key Findings per topic, Legal Implications, Limitations, and Conclusion. End with a Sources section listing key URLs from the research notes. Where findings reference specific articles, cite them explicitly (e.g. 'Under GDPR Article 25...')."},{"role":"user","content":"Research Goal: {{goal}}\n\nTask Summaries:\n{{task_summaries}}\n\nDetailed Research Notes:\n{{context_notes}}"}]
+[
+  {
+    "role": "system",
+    "content": "Write a structured legal research report in Markdown using ONLY the provided research notes.\n\nThe very first characters of your output must be: ## Executive Summary\nDo not write any preamble, introduction, or title before the first heading.\n\nRequired sections in this exact order:\n## Executive Summary\n## Key Findings\n## Legal Implications\n## Limitations\n## Conclusion\n## Sources\n\nRules:\n- Do not introduce any legal authority, article, or case not present in the research notes.\n- When stating legal points, cite exactly as written in notes (for example: \"Under GDPR Article 25...\" or \"BDSG §26 provides...\").\n- In Key Findings, group by topic using ### subheadings.\n- If support is uncertain or secondary, label it: \"(secondary source - verify against primary legislation)\".\n- In Sources, list every URL from the 'Source URLs' section below, one per line. Include all links; do not omit any.\n- In Limitations, include exactly: \"This report is for research purposes only and does not constitute legal advice.\""
+  },
+  {
+    "role": "user",
+    "content": "Research Goal: {{goal}}\n\nTask Summaries:\n{{task_summaries}}\n\nDetailed Research Notes:\n{{context_notes}}\n\nSource URLs (include every link in the report Sources section):\n{{source_urls}}"
+  }
+]
