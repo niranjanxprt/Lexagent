@@ -14,7 +14,7 @@ The project uses a **Dockerfile** that:
 
 - Builds the React frontend and copies it into the image as `/app/static`
 - Installs Python dependencies from `requirements.txt`
-- Runs `scripts/start.sh`, which starts: `uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}`
+- Runs `start.sh`, which starts: `uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}`
 
 `railway.toml` in the repo:
 
@@ -24,7 +24,7 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "bash scripts/start.sh"
+startCommand = "bash start.sh"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
