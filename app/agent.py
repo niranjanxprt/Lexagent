@@ -327,13 +327,13 @@ def execute_task(task: Task, state: AgentState) -> Task:
     )
     task.reflection = reflect_result.gap.strip() or "Fully addressed."
     task.reflect_status = reflect_result.status
-    # Add reflect outcome as a Langfuse span attribute for filtering in dashboard
+    # Add reflect outcome to current observation (reflect generation) for dashboard filtering
     try:
-        get_client().update_current_observation(
+        get_client().update_current_generation(
             metadata={"reflect_status": reflect_result.status, "reflect_gap": reflect_result.gap}
         )
-    except Exception:
-        pass  # Langfuse unavailable; non-fatal
+    except Exception as e:
+        logger.debug("langfuse_reflect_metadata_failed", extra={"error": str(e)})
     if reflect_result.status != "fully_addressed":
         logger.warning(
             "task_incomplete",

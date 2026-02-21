@@ -199,26 +199,7 @@ Why this split matters:
 
 ## Architecture
 
-```
-lexagent/
-├── app/
-│   ├── agent.py              # Agent loop: state transitions, no framework hidden state
-│   ├── main.py               # FastAPI: thin HTTP layer, delegates to agent
-│   ├── models.py             # Pydantic: Task + AgentState with Literal status enum
-│   ├── security.py           # Input validation: regex patterns, length limits, null-byte checks
-│   ├── storage.py            # JSON persistence: auditable, swappable for DB
-│   ├── tools.py              # Tavily search + report writer
-│   └── init_langfuse_prompts.py
-├── frontend-react/            # React + Vite + TypeScript (served at / in Docker)
-├── docs/                      # Project documentation
-├── data/                      # Session JSON (runtime; use volume in production)
-├── reports/                   # Markdown reports (runtime)
-├── transcript.md             # Example session transcript
-├── Makefile                  # Development commands
-└── pyproject.toml
-```
-
-**Why key modules are separate:** `agent.py` vs `main.py` keeps HTTP concerns out of the agent loop so you can test planning and execution without a server. `security.py` is isolated so guardrails can be unit-tested and tightened without touching business logic. `storage.py` exposes a small interface (`save_session`, `load_session`, `list_sessions`, `delete_session`) so swapping to Postgres/SQLite is a matter of reimplementing four functions.
+High-level layout and design are documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (system components, agent loop, data models, prompt architecture, deployment). Key modules: `agent.py` (loop), `main.py` (HTTP), `storage.py` (JSON persistence), `tools.py` (Tavily + report writer), `security.py` (input validation).
 
 ---
 
@@ -270,16 +251,15 @@ Every session produces a trace in Langfuse: per-task sub-spans, token usage, lat
 
 | Document | Description |
 |----------|-------------|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture, agent loop, data models, deployment topology |
 | [docs/TESTING.md](docs/TESTING.md) | Testing guide (Python + React) |
 | [docs/EVALUATION.md](docs/EVALUATION.md) | Evaluation design and per-scenario criteria |
-| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deployment (Railway, Docker, local) |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deployment (Railway, Docker, local; includes CLI quick reference) |
 | [docs/LANGFUSE_SETUP.md](docs/LANGFUSE_SETUP.md) | Langfuse prompt management |
 | [docs/LEGAL_RESEARCH_PROMPTS_V4.md](docs/LEGAL_RESEARCH_PROMPTS_V4.md) | All 5 legal-research prompts (V4) in one file |
 | [docs/SECURITY.md](docs/SECURITY.md) | Security guardrails |
 | [docs/BEST_PRACTICES.md](docs/BEST_PRACTICES.md) | Development best practices |
 | [transcript.md](transcript.md) | Example session transcript |
-| [docs/REMAINING_TASKS.md](docs/REMAINING_TASKS.md) | What’s done vs remaining (Langfuse, Railway, manual checks) |
-| [docs/CLI_LANGFUSE_RAILWAY.md](docs/CLI_LANGFUSE_RAILWAY.md) | Update Langfuse prompts and Railway (volumes/vars) via CLI |
 | [frontend-react/README.md](frontend-react/README.md) | React frontend details |
 
 ---
@@ -316,7 +296,7 @@ Every session produces a trace in Langfuse: per-task sub-spans, token usage, lat
 ## Known limitations
 
 - **Security false positives:** Queries containing “act as”, “assume the role of”, or “roleplay” may be blocked; rephrase (e.g. “obligations of a data processor under GDPR Article 28”).
-- **No retry logic:** Tavily or OpenAI timeouts fail the current task; session stays resumable.
+- **Retry:** Tavily uses 3-attempt retry with backoff; OpenAI timeouts still fail the current task; session stays resumable.
 - **Context cap:** `context_notes` is truncated at 8,000 chars in execution and 12,000 in the report for long sessions.
 
 ## License

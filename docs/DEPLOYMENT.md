@@ -62,7 +62,18 @@ This runs tests, lint, Docker build, and endpoint checks. Railway uses the same 
 4. **Domain:** `railway domain` or Dashboard → Settings → Networking → Generate Domain.
 5. **Volumes:** `railway volume add --mount-path /app/data` (and optionally `/app/reports`). Or Dashboard → Volumes → Add volume.
 
-See [CLI_LANGFUSE_RAILWAY.md](CLI_LANGFUSE_RAILWAY.md) for one-shot scripts. Connecting GitHub to Railway triggers deploys on push; variables and volumes are unchanged.
+Connecting GitHub to Railway triggers deploys on push; variables and volumes are unchanged.
+
+### CLI quick reference
+
+| Goal | Command |
+|------|---------|
+| Update all Langfuse prompts | `bash scripts/update_langfuse_prompts_cli.sh` |
+| Add Railway volume `/app/data` | `railway volume add --mount-path /app/data` |
+| Set Railway model | `railway variables --set OPENAI_MODEL=gpt-4.1-mini` |
+| List Langfuse prompts | `npx langfuse-cli --env .env api prompts list` |
+| List Railway volumes | `railway volume list` |
+| List Railway variables | `railway variables` |
 
 ### Deploy (ongoing)
 
