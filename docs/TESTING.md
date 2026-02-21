@@ -1,6 +1,10 @@
 # LexAgent Testing Guide
 
-## Quick Tests (No API Keys)
+## Test philosophy
+
+The agent has **deterministic** parts (JSON parsing, state transitions, storage) and **non-deterministic** parts (LLM responses, Tavily results). Tests focus on the deterministic behavior; the non-deterministic behavior is validated manually or via scenario checklists (see evaluation docs).
+
+## Quick tests (no API keys)
 
 ### Python backend
 
@@ -8,10 +12,7 @@
 make test
 ```
 
-This runs:
-- Model validation (Task, AgentState)
-- Storage (save, load session)
-- Basic imports
+Covers: model validation (Task, AgentState), storage save/load, and that core imports (including agent and security) work.
 
 ### React frontend
 
@@ -19,13 +20,15 @@ This runs:
 make react-test
 ```
 
-Runs Vitest suite: types, API config, utils, components, integration.
+Runs Vitest: types, API config, utils, components, integration.
 
 ### All tests
 
 ```bash
 make test-all
 ```
+
+Runs both Python and React tests.
 
 ---
 
@@ -37,9 +40,20 @@ make lint
 uv run ruff check app/ frontend/
 ```
 
+Fix auto-fixable issues: `make lint-fix`.
+
 ---
 
-## Full E2E (Requires API Keys)
+## Key behaviors to test (when adding tests)
+
+- **State transitions:** `task.status` is set to `in_progress` and the session is saved *before* calling the search. A crash during search leaves the task in a recoverable state, not a phantom "pending".
+- **Security:** `validate_goal()`, `validate_context_notes()`, and `validate_search_results()` are used at the boundaries; injection patterns should be unit-tested in `security.py`.
+- **Context size:** After execution, `context_notes` should contain only compressed summaries (e.g. no raw Tavily blobs); length expectations can be asserted in tests.
+- **Storage round-trip:** Save and load a session; all fields (goal, tasks, context_notes, etc.) should match.
+
+---
+
+## Full E2E (requires API keys)
 
 ### 1. Setup
 

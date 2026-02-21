@@ -160,6 +160,8 @@ def execute_step(session_id: str, req: Request):
 
     # Execute the first pending task
     task = pending_tasks[0]
+    # Set in_progress and save BEFORE executing search. A crash during search_web()
+    # leaves the task in a recoverable in_progress state, not a phantom "pending".
     task.status = "in_progress"
     save_session(state)
 

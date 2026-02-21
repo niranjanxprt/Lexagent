@@ -18,7 +18,7 @@ help:
 	@echo "Development:"
 	@echo "  make lint           Run Ruff linter"
 	@echo "  make lint-fix       Auto-fix linting issues"
-		@echo "  make test           Run Python backend tests"
+	@echo "  make test           Run Python backend tests"
 	@echo "  make react-test     Run React frontend tests"
 	@echo "  make test-all       Run all tests"
 	@echo ""

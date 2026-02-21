@@ -1,51 +1,37 @@
-# Railway Deployment (CLI Only)
+# Railway Deployment
 
-Deploy LexAgent backend to Railway using only the Railway CLI. No MCP servers.
+Deploy LexAgent to Railway using the **Dockerfile** (recommended). The repo’s `railway.toml` is already set for Docker builds.
 
 ## Prerequisites
 
 1. **Railway account**: [railway.app](https://railway.app)
-2. **Railway CLI installed**:
-   ```bash
-   npm i -g @railway/cli
-   # or: brew install railway
-   ```
-3. **Login**:
-   ```bash
-   railway login
-   ```
+2. **Railway CLI** (optional): `npm i -g @railway/cli` or `brew install railway`
+3. **Login**: `railway login`
 
-## Pre-Deploy: Add Railway Config
+## Build and run (current setup)
 
-Create these files in the project root before deploying.
+The project uses a **Dockerfile** that:
 
-### Option A: `railway.toml`
+- Builds the React frontend and copies it into the image as `/app/static`
+- Installs Python dependencies from `requirements.txt`
+- Runs `start.sh`, which starts: `uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}`
+
+`railway.toml` in the repo:
 
 ```toml
 [build]
-builder = "nixpacks"
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+startCommand = "bash start.sh"
+healthcheckPath = "/health"
+healthcheckTimeout = 300
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 10
 ```
 
-### Option B: `Procfile`
-
-```
-web: uvicorn app.main:app --host 0.0.0.0 --port $PORT
-```
-
-### Python version (optional)
-
-Create `.python-version` in project root:
-
-```
-3.11
-```
-
-Railway/Nixpacks will use this. The project has `requirements.txt`; Nixpacks will run `pip install -r requirements.txt`.
+Do **not** switch to Nixpacks or Procfile unless you intend to maintain a separate non-Docker path; the app expects the React build to be present at `/app/static`.
 
 ## Deployment Steps
 
@@ -121,11 +107,23 @@ When you connect GitHub: Railway will use the repo as the source. Future pushes 
 
 To connect: Railway Dashboard → Project → New → GitHub Repo → select your repo.
 
+## Persistent storage (volumes)
+
+The app writes sessions to `/app/data` and reports to `/app/reports`. Without a volume, these are ephemeral and reset on redeploy.
+
+To persist sessions (and optionally reports):
+
+1. Railway Dashboard → your service → **Volumes**
+2. Add a volume with **Mount Path** `/app/data`
+3. Optionally add a second volume for **Mount Path** `/app/reports`
+
+The app creates these directories on startup when the mount is writable.
+
 ## Notes
 
-- **Storage**: `data/` and `reports/` are ephemeral. Sessions reset on redeploy. For persistence, add a database later.
-- **Langfuse prompts**: Run `uv run python app/init_langfuse_prompts.py` locally with `LANGFUSE_*` set; prompts live in Langfuse, not in the deploy.
-- **Frontend**: Deploy backend first. For React, build with `VITE_API_URL=https://your-app.railway.app` and deploy as a separate static service or serve from FastAPI.
+- **Langfuse:** Run `uv run python app/init_langfuse_prompts.py` locally once with `LANGFUSE_*` set; prompts live in Langfuse. If Langfuse is unreachable at runtime, the agent uses inline fallback prompts.
+- **Frontend:** The same container serves the React app at `/` and the API at `/agent/*` and `/docs`. No separate frontend deploy needed.
+- **Streamlit:** Not run on Railway. Use the React UI, or run Streamlit locally with `LEXAGENT_API_URL=https://your-app.railway.app`.
 
 ## Troubleshooting
 

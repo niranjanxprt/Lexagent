@@ -193,6 +193,9 @@ def validate_all_variables(
 ) -> dict[str, Any]:
     """
     Validate all prompt variables in one call.
+    Not used in the agent loop: execute_task() and endpoints use per-step
+    validation (validate_goal, validate_context_notes, validate_search_results)
+    so that errors can be attributed to a specific step.
 
     Args:
         goal: Research goal

@@ -1,5 +1,7 @@
-# Local development: backend (API + React)
+# Local development: backend (API + React) and optional Streamlit UI
 # Usage: docker compose up --build
+# - Backend + React: http://localhost:8000
+# - Streamlit: http://localhost:8501 (set LEXAGENT_API_URL to backend)
 services:
   backend:
     build:
@@ -16,3 +18,17 @@ services:
     volumes:
       - ./data:/app/data
       - ./reports:/app/reports
+
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: streamlit run frontend/ui.py --server.port 8501 --server.address 0.0.0.0
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    environment:
+      - LEXAGENT_API_URL=http://backend:8000
+    depends_on:
+      - backend

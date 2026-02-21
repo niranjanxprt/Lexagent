@@ -34,16 +34,14 @@
     {
       "title": "Data security and breach notification",
       "description": "Research GDPR Article 32 (technical and organizational measures) and Article 33-34 (breach notification requirements)"
-    },
-    {
-      "title": "Compile Final Report",
-      "description": "Synthesize all findings into a comprehensive markdown report with citations"
     }
   ]
 }
 ```
 
-**Plan displayed to user with 5 tasks.**
+**Plan displayed to user with 4 tasks.**
+
+*Note: Report generation is triggered automatically by the backend when all research tasks complete — it is not a planned task and does not invoke the Tavily search tool.*
 
 ---
 
@@ -53,8 +51,9 @@
 
 **Step 1 — Query Refinement:**
 ```
-Query: "GDPR Article 5 principles AI legal document processing"
+Query: "GDPR Article 5 principles AI legal document processing Germany"
 ```
+*(Example of a slightly long query; the refine-query step can produce more specific variants.)*
 
 **Step 2 — Web Search (Tavily):**
 ```
@@ -136,6 +135,16 @@ should implement privacy controls at system design, not as an afterthought, and 
 DPIAs with mitigation strategies for high-risk processing.
 ```
 
+**Step 4 — Reflection:**
+```
+The task was partially answered — results covered GDPR Article 25 and DPIA requirements
+broadly but did not surface specific German DPA (DSK) guidance on legal AI. The EU AI Act
+overlap was not covered in these results and would need a follow-up task.
+```
+
+**Result:** ✅ Task 2 complete
+*(This reflection shows the QA layer capturing a gap rather than rubber-stamping.)*
+
 **Context notes accumulation:**
 ```
 [GDPR principles for AI document processing]: GDPR Article 5 establishes core principles...
@@ -143,8 +152,6 @@ DPIAs with mitigation strategies for high-risk processing.
 [Privacy-by-design (GDPR Article 25)]: GDPR Article 25 mandates privacy-by-design and
 default settings; legal AI systems must conduct DPIAs...
 ```
-
-**Result:** ✅ Task 2 complete
 
 ---
 
@@ -240,7 +247,9 @@ requiring law firms to implement incident response plans and maintain breach log
 
 ---
 
-### Task 5: Compile Final Report
+### Report generation (automatic)
+
+When all 4 research tasks are done, the backend automatically runs the report generator (no separate "Task 5" in the plan). No Tavily search is invoked for this step.
 
 **Report Generation LLM Call (synthesis phase):**
 
@@ -393,8 +402,8 @@ EU-based AI solutions and document compliance thoroughly.
 
 **Result:**
 ```
-✅ Task 5 complete
 Report saved to: reports/a1b2c3d4.md
+Session marked COMPLETE.
 ```
 
 **User sees:** Final report rendered in Streamlit with download button; session marked as COMPLETE.
@@ -478,11 +487,13 @@ Saved to `data/a1b2c3d4.json`:
 
 2. **Each task refines queries:** Task 3 was more specific because prior context from Tasks 1-2 informed the search.
 
-3. **Final report is synthesis:** The report generator received all `context_notes` at once and synthesized them into a coherent narrative with structure (Executive Summary, Key Findings, Legal Implications, etc.).
+3. **Reflection can capture gaps:** Task 2’s reflection explicitly noted that German DPA guidance and EU AI Act overlap were not covered — the reflect step acts as QA, not a rubber stamp.
 
-4. **No token bloat:** Even if this session had 20 tasks instead of 4, the final LLM call would receive the same compressed context list — token usage stays flat.
+4. **Final report is synthesis:** The report generator is run automatically when all research tasks complete; it receives all `context_notes` and synthesizes them into a coherent narrative (Executive Summary, Key Findings, Legal Implications, etc.).
 
-5. **User transparency:** At each step, user sees findings, reflection, and sources; can inspect the session JSON to verify no raw data is stored.
+5. **No token bloat:** Context is capped; the combined notes are truncated if they exceed 8,000 characters in execution or 12,000 in the report step.
+
+6. **User transparency:** At each step, user sees findings, reflection, and sources; can inspect the session JSON to verify no raw data is stored.
 
 ---
 
