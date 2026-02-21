@@ -210,6 +210,7 @@ Every session produces a trace in Langfuse: per-task sub-spans, token usage, lat
 | [docs/BEST_PRACTICES.md](docs/BEST_PRACTICES.md) | Development best practices |
 | [docs/UPDATES.md](docs/UPDATES.md) | Recent improvements |
 | [transcript.md](transcript.md) | Example session transcript |
+| [docs/LOCALHOST_TEST_LINKS.md](docs/LOCALHOST_TEST_LINKS.md) | Localhost URLs for testing |
 | [frontend-react/README.md](frontend-react/README.md) | React frontend details |
 
 ---
