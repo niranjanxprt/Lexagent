@@ -6,7 +6,9 @@ from tavily import TavilyClient
 
 from app.context import get_api_keys
 
-REPORTS_DIR = Path(__file__).parent.parent / "reports"
+# Configurable via env for Railway (e.g. volume at /app/persist → LEXAGENT_REPORTS_DIR=/app/persist/reports)
+_DEFAULT_REPORTS = Path(__file__).parent.parent / "reports"
+REPORTS_DIR = Path(os.environ.get("LEXAGENT_REPORTS_DIR", str(_DEFAULT_REPORTS)))
 
 
 def search_web(query: str) -> dict:

@@ -109,14 +109,17 @@ To connect: Railway Dashboard → Project → New → GitHub Repo → select you
 
 ## Persistent storage (volumes)
 
-The app writes sessions to **`/app/data`** and reports to **`/app/reports`** (see `app/storage.py` and `app/tools.py`). Without a volume at `/app/data`, sessions are ephemeral and reset on redeploy.
+The app writes sessions to disk (not memory) at **`/app/data`** and reports at **`/app/reports`**. Without a volume, sessions are ephemeral and reset on redeploy.
 
-To persist sessions:
+**Default setup:**
+- **CLI:** `railway volume add --mount-path /app/data`
+- **Dashboard:** Volumes → Add volume → Mount Path `/app/data`. Optionally add `/app/reports`.
 
-- **CLI:** `railway volume add --mount-path /app/data` (from a linked project). If you already have a volume at another path (e.g. `/app/persist`), add a separate volume at `/app/data` so the app can persist sessions.
-- **Dashboard:** Railway Dashboard → your service → Volumes → Add volume → **Mount Path** `/app/data`. Optionally add **`/app/reports`** for report files.
+**If your volume is at `/app/persist`:** Set Railway variables:
+- `LEXAGENT_DATA_DIR=/app/persist/data`
+- `LEXAGENT_REPORTS_DIR=/app/persist/reports`
 
-The app creates these directories on startup when the mount is writable.
+The app creates these directories on first write when the mount is writable.
 
 ## Notes
 

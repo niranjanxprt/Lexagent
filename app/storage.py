@@ -1,9 +1,12 @@
 import json
+import os
 from pathlib import Path
 
 from app.models import AgentState
 
-DATA_DIR = Path(__file__).parent.parent / "data"
+# Configurable via env for Railway (e.g. volume at /app/persist → LEXAGENT_DATA_DIR=/app/persist/data)
+_DEFAULT_DATA = Path(__file__).parent.parent / "data"
+DATA_DIR = Path(os.environ.get("LEXAGENT_DATA_DIR", str(_DEFAULT_DATA)))
 
 
 def save_session(state: AgentState) -> None:
