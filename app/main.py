@@ -14,6 +14,7 @@ from app.context import set_api_keys
 from app.models import AgentState, ExecuteResponse, GoalRequest
 from app.security import PromptInjectionError, validate_goal
 from app.storage import delete_session, list_sessions, load_session, save_session
+from app.tools import REPORTS_DIR
 
 # Load .env explicitly with override
 env_file = Path(__file__).parent.parent / ".env"
@@ -145,12 +146,12 @@ def get_report(session_id: str):
         raise HTTPException(status_code=404, detail="Session not found")
     if not state.final_report_path:
         raise HTTPException(status_code=404, detail="Report not yet generated")
-    try:
-        with open(state.final_report_path) as f:
-            content = f.read()
-        return Response(content=content, media_type="text/markdown")
-    except FileNotFoundError as err:
-        raise HTTPException(status_code=404, detail="Report file not found") from err
+    report_paths = [Path(state.final_report_path), REPORTS_DIR / f"{session_id}.md"]
+    for path in report_paths:
+        if path.exists():
+            content = path.read_text(encoding="utf-8")
+            return Response(content=content, media_type="text/markdown")
+    raise HTTPException(status_code=404, detail="Report file not found")
 
 
 # ---------------------------------------------------------------------------

@@ -334,36 +334,33 @@ else:
             st.markdown(f"- {note}")
         st.divider()
 
-    # Final report
+    # Final report (fetch via API; Streamlit runs in separate container)
     if state["final_report_path"]:
         st.subheader("📄 Final Report")
         try:
-            with open(state["final_report_path"]) as f:
-                report_md = f.read()
-
-            # Create columns for report header and download button
-            col_report, col_download = st.columns([4, 1])
-            with col_report:
-                st.success("Report ready for download")
-            with col_download:
-                st.download_button(
-                    label="📥 Download MD",
-                    data=report_md,
-                    file_name=f"research_report_{session_id[:8]}.md",
-                    mime="text/markdown",
-                    use_container_width=True
-                )
-
-            # Markdown preview option
-            with st.expander("👁 Preview Markdown Source", expanded=False):
-                st.markdown("**Raw markdown code that will be downloaded:**")
-                st.code(report_md, language="markdown", line_numbers=True)
-                st.caption("💡 Copy this code or download the file above")
-
-            # Display rendered report
-            st.markdown(report_md)
-        except Exception:
-            st.warning("Could not load report file. Check the server file system.")
+            report_resp = httpx.get(f"{API_URL}/agent/{session_id}/report", timeout=10)
+            if report_resp.status_code != 200:
+                st.warning(f"Could not load report: {report_resp.status_code}")
+            else:
+                report_md = report_resp.text
+                col_report, col_download = st.columns([4, 1])
+                with col_report:
+                    st.success("Report ready for download")
+                with col_download:
+                    st.download_button(
+                        label="📥 Download MD",
+                        data=report_md,
+                        file_name=f"research_report_{session_id[:8]}.md",
+                        mime="text/markdown",
+                        use_container_width=True
+                    )
+                with st.expander("👁 Preview Markdown Source", expanded=False):
+                    st.markdown("**Raw markdown code that will be downloaded:**")
+                    st.code(report_md, language="markdown", line_numbers=True)
+                    st.caption("💡 Copy this code or download the file above")
+                st.markdown(report_md)
+        except Exception as e:
+            st.warning(f"Could not load report: {e}")
 
     # Execution controls
     if state["is_active"]:

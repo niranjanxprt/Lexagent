@@ -9,6 +9,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: http://localhost:8000
+    command: bash start.sh
     ports:
       - "8000:8000"
     env_file:
@@ -18,6 +19,12 @@ services:
     volumes:
       - ./data:/app/data
       - ./reports:/app/reports
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
 
   streamlit:
     build:
@@ -32,6 +39,12 @@ services:
       - LEXAGENT_API_URL=http://backend:8000
     depends_on:
       - backend
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 256M
 
   react:
     build:
@@ -44,3 +57,9 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 64M
