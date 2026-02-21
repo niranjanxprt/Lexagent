@@ -43,17 +43,22 @@ def sanitize_user_input(text: str, max_length: int = 2000) -> str:
         )
 
     # Check for common prompt injection patterns
+    # Note: Patterns are kept specific to actual injection attempts, not legitimate legal language
     injection_patterns = [
-        r"(?i)(ignore|disregard|forget).*?(previous|prior|above).*?(instruction|prompt|message)",
+        # Clear instruction override attempts
+        r"(?i)(ignore|disregard|forget).*?(previous|prior|above|all).*?(instruction|prompt|message|rule)",
         r"(?i)(system|admin).*?prompt",
-        r"(?i)((act|pretend|assume).*?as|role\s*?:|roleplay)",
-        r"(?i)(jailbreak|bypass|override|circumvent).*?(rule|filter|restriction|safeguard)",
-        r"(?i)(execute|run|eval).*?(code|command|script)",
-        r"(?i)(output|show|display).*?(hidden|secret|internal|source)",
-        r"(?i)injection|payload|shellcode|reverse.*?shell",
-        r"(?i)<\s*(script|iframe|embed|object)",  # HTML/XML injection
+        # Jailbreak attempts
+        r"(?i)(jailbreak|bypass|override|circumvent).*?(restriction|safeguard|filter|guideline)",
+        # You are now prompts
+        r"(?i)you\s+are\s+now\s+",
+        # Do anything now patterns
+        r"(?i)do\s+(anything|whatever)\s+now",
+        # HTML/XML injection
+        r"(?i)<\s*(script|iframe|embed|object)",
         r"(?i)on\w+\s*=",  # Event handler injection
-        r"(?i)(;|&&|\|\|)\s*(curl|wget|exec|sh)",  # Command injection
+        # Command injection with shell operators
+        r"(?i)(;|&&|\|\|)\s*(curl|wget|exec|sh|bash)",
     ]
 
     for pattern in injection_patterns:

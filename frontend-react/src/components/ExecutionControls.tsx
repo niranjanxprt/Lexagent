@@ -47,7 +47,8 @@ export function ExecutionControls({
         }, 3000);
       } catch (err) {
         if (isMounted) {
-          setError('Auto-run failed. Stopping auto-execution.');
+          const msg = err instanceof Error ? err.message : 'Auto-run failed. Stopping auto-execution.';
+          setError(msg);
           setAutoRun(false);
         }
       } finally {

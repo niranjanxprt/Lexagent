@@ -32,3 +32,15 @@ services:
       - LEXAGENT_API_URL=http://backend:8000
     depends_on:
       - backend
+
+  react:
+    build:
+      context: ./frontend-react
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped

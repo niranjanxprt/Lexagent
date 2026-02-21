@@ -7,6 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
+from openai import APIError, AuthenticationError
+
 from app.agent import execute_task, generate_final_report, generate_plan
 from app.context import set_api_keys
 from app.models import AgentState, ExecuteResponse, GoalRequest
@@ -25,7 +27,20 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://localhost:8501",
+        "http://localhost:8502",
+        "http://127.0.0.1:8501",
+        "http://127.0.0.1:8502",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -33,8 +48,24 @@ app.add_middleware(
 
 
 @app.exception_handler(HTTPException)
-async def _debug_404_handler(request: Request, exc: HTTPException):
+async def _http_exception_handler(request: Request, exc: HTTPException):
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+
+@app.exception_handler(AuthenticationError)
+async def _openai_auth_handler(request: Request, exc: AuthenticationError):
+    return JSONResponse(
+        status_code=401,
+        content={"detail": "Invalid or expired OpenAI API key. Check OPENAI_API_KEY or X-OpenAI-API-Key header."},
+    )
+
+
+@app.exception_handler(APIError)
+async def _openai_api_handler(request: Request, exc: APIError):
+    return JSONResponse(
+        status_code=503,
+        content={"detail": f"OpenAI API error: {getattr(exc, 'message', str(exc))}"},
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -74,18 +105,15 @@ def start_agent(body: GoalRequest, req: Request):
     """
     _apply_api_key_headers(req)
     try:
-        # Validate goal for prompt injection and suspicious content
         validated_goal = validate_goal(body.goal)
     except PromptInjectionError as e:
         raise HTTPException(status_code=400, detail=f"Invalid goal: {str(e)}") from e
 
     state = AgentState(goal=validated_goal)
     state.mode = "plan"
-
     tasks = generate_plan(validated_goal, state.session_id)
     state.tasks = tasks
     state.mode = "execute"
-
     save_session(state)
     return state
 
@@ -173,13 +201,11 @@ def execute_step(session_id: str, req: Request):
         executed_task = execute_task(task, state)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
-    except Exception:
+    except Exception as e:
         task.status = "failed"
         save_session(state)
-        raise HTTPException(
-            status_code=500,
-            detail="Task execution failed; task marked as failed.",
-        ) from None
+        msg = str(e) if str(e) else "Task execution failed"
+        raise HTTPException(status_code=500, detail=f"Task execution failed: {msg}") from e
 
     # Update the task in state.tasks by index
     for i, t in enumerate(state.tasks):

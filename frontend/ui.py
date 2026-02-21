@@ -1,5 +1,4 @@
 import os
-import time
 
 import httpx
 import streamlit as st
@@ -200,8 +199,13 @@ def _api_headers():
 try:
     sessions_resp = httpx.get(f"{API_URL}/sessions", timeout=10)
     all_sessions = sessions_resp.json() if sessions_resp.status_code == 200 else []
+    api_reachable = True
 except Exception:
     all_sessions = []
+    api_reachable = False
+
+if not api_reachable:
+    st.sidebar.warning(f"Cannot reach API at {API_URL}. Start the backend with: `uv run uvicorn app.main:app --port 8000`")
 
 if all_sessions:
     st.sidebar.subheader("Manage Sessions")
@@ -260,9 +264,18 @@ if "session_id" not in st.session_state:
                         st.session_state["session_state"] = data
                         st.rerun()
                     else:
-                        st.error(f"API error: {resp.status_code} - {resp.text}")
+                        try:
+                            err_json = resp.json()
+                            detail = err_json.get("detail", resp.text)
+                        except Exception:
+                            detail = resp.text
+                        st.error(f"API error: {resp.status_code} - {detail}")
                 except Exception as e:
-                    st.error(f"Failed to connect to LexAgent API: {e}")
+                    msg = str(e)
+                    if "connect" in msg.lower() or "refused" in msg.lower():
+                        st.error(f"Cannot connect to LexAgent API at {API_URL}. Ensure the backend is running.")
+                    else:
+                        st.error(f"Failed to connect to LexAgent API: {e}")
 
 # --- Session view ---
 else:
@@ -354,15 +367,19 @@ else:
 
     # Execution controls
     if state["is_active"]:
+        # Initialize auto-run state
+        if "auto_running" not in st.session_state:
+            st.session_state["auto_running"] = False
+
         col_a, col_b = st.columns([1, 4])
         with col_a:
             if st.button("Execute Next Step", type="primary"):
-                with st.spinner("Executing..."):
+                with st.spinner("Executing... (may take 1–2 min per task)"):
                     try:
                         exec_resp = httpx.post(
                             f"{API_URL}/agent/{session_id}/execute",
                             headers=_api_headers(),
-                            timeout=120,
+                            timeout=180,
                         )
                         if exec_resp.status_code == 200:
                             result = exec_resp.json()
@@ -372,26 +389,64 @@ else:
                                 st.success(f"Completed: {result['message']}")
                             st.rerun()
                         else:
-                            st.error(f"Execution error: {exec_resp.status_code} - {exec_resp.text}")
+                            try:
+                                err_json = exec_resp.json()
+                                detail = err_json.get("detail", exec_resp.text)
+                            except Exception:
+                                detail = exec_resp.text
+                            st.error(f"Execution error: {exec_resp.status_code} - {detail}")
                     except Exception as e:
-                        st.error(f"Execution failed: {e}")
+                        msg = str(e)
+                        if "connect" in msg.lower() or "refused" in msg.lower():
+                            st.error(f"Cannot connect to LexAgent API at {API_URL}. Ensure the backend is running.")
+                        else:
+                            st.error(f"Execution failed: {e}")
 
         with col_b:
-            # Auto-run toggle
-            auto_run = st.checkbox("Auto-run all remaining steps", value=False)
-            if auto_run and state["is_active"]:
-                st.info("Auto-running... Refresh will stop it.")
-                time.sleep(1)
-                try:
-                    exec_resp = httpx.post(
-                        f"{API_URL}/agent/{session_id}/execute",
-                        headers=_api_headers(),
-                        timeout=120,
-                    )
-                    if exec_resp.status_code == 200:
+            # Auto-run toggle with proper state management
+            auto_run = st.checkbox(
+                "Auto-run all remaining steps",
+                value=st.session_state.get("auto_running", False),
+                key="auto_run_checkbox"
+            )
+            if auto_run != st.session_state.get("auto_running", False):
+                st.session_state["auto_running"] = auto_run
+
+            # Show stop button if auto-running
+            if st.session_state.get("auto_running", False) and state["is_active"]:
+                stop_col, spinner_col = st.columns([1, 3])
+                with stop_col:
+                    if st.button("⏹ Stop", type="secondary"):
+                        st.session_state["auto_running"] = False
                         st.rerun()
-                except Exception as e:
-                    st.error(f"Auto-run failed: {e}")
+
+                with spinner_col:
+                    st.info("⏳ Auto-running... execute will repeat until completed or stopped.")
+
+                # Execute next step
+                with st.spinner("Executing step... (this may take 1–2 min per task)"):
+                    try:
+                        exec_resp = httpx.post(
+                            f"{API_URL}/agent/{session_id}/execute",
+                            headers=_api_headers(),
+                            timeout=180,
+                        )
+                        if exec_resp.status_code == 200:
+                            result = exec_resp.json()
+                            if result.get("is_done", False):
+                                st.session_state["auto_running"] = False
+                            st.rerun()
+                        else:
+                            try:
+                                err_json = exec_resp.json()
+                                detail = err_json.get("detail", exec_resp.text)
+                            except Exception:
+                                detail = exec_resp.text
+                            st.session_state["auto_running"] = False
+                            st.error(f"Auto-run failed: {detail}")
+                    except Exception as e:
+                        st.session_state["auto_running"] = False
+                        st.error(f"Auto-run failed: {e}")
 
     # Delete session
     st.divider()

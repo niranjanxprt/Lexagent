@@ -36,6 +36,11 @@ export async function fetchAgentState(sessionId: string): Promise<AgentState | n
     return await response.json();
   } catch (error) {
     console.error('Error fetching agent state:', error);
+    if (error instanceof Error && error.message === 'Failed to fetch') {
+      throw new Error(
+        `Cannot connect to the LexAgent API. Ensure the backend is running at ${API_URL}.`
+      );
+    }
     throw error;
   }
 }
@@ -53,14 +58,25 @@ export async function startSession(
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Failed to start session: ${response.status} - ${error}`);
+      let detail = '';
+      try {
+        const json = await response.json();
+        detail = json.detail ?? JSON.stringify(json);
+      } catch {
+        detail = await response.text();
+      }
+      throw new Error(detail || `Failed to start session: ${response.status}`);
     }
 
     const data = await response.json();
     return { session_id: data.session_id, state: data };
   } catch (error) {
     console.error('Error starting session:', error);
+    if (error instanceof Error && error.message === 'Failed to fetch') {
+      throw new Error(
+        `Cannot connect to the LexAgent API. Ensure the backend is running at ${API_URL} and CORS is configured.`
+      );
+    }
     throw error;
   }
 }
@@ -71,18 +87,37 @@ export async function executeStep(
 ): Promise<ExecuteResponse> {
   try {
     const headers = headersWithApiKeys(apiKeys);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 180_000); // 3 min per task
     const response = await fetch(`${API_URL}/agent/${sessionId}/execute`, {
       method: 'POST',
       ...(Object.keys(headers).length ? { headers } : {}),
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
-      throw new Error(`Failed to execute step: ${response.status}`);
+      let detail = '';
+      try {
+        const json = await response.json();
+        detail = json.detail ?? '';
+      } catch {
+        detail = await response.text();
+      }
+      throw new Error(detail || `Failed to execute step: ${response.status}`);
     }
 
     return await response.json();
   } catch (error) {
     console.error('Error executing step:', error);
+    if (error instanceof Error && error.message === 'Failed to fetch') {
+      throw new Error(
+        `Cannot connect to the LexAgent API. Ensure the backend is running at ${API_URL}.`
+      );
+    }
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Request timed out. Each task can take 1–2 minutes. Try again.');
+    }
     throw error;
   }
 }
