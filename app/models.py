@@ -35,6 +35,7 @@ class Task(BaseModel):
     reflection: str | None = None
     reflect_status: Literal["fully_addressed", "partially_addressed", "not_addressed"] = "fully_addressed"
     sources: list[str] = Field(default_factory=list)
+    failure_reason: str | None = None
 
 
 class AgentState(BaseModel):

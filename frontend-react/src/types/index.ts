@@ -17,6 +17,7 @@ export interface Task {
   result: string | null;
   reflection: string | null;
   sources: string[];
+  failure_reason?: string | null;
 }
 
 export interface AgentState {

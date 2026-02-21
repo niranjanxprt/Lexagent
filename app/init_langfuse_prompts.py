@@ -143,6 +143,7 @@ PROMPTS = [
                     '- When stating legal points, cite exactly as written in notes (for example: "Under GDPR Article 25..." or "BDSG §26 provides...").\n'
                     "- In Key Findings, group by topic using ### subheadings.\n"
                     '- If support is uncertain or secondary, label it: "(secondary source - verify against primary legislation)".\n'
+                    "- For any task listed in Task Summaries as 'Failed', include a brief note in the report (e.g. under Key Findings or Limitations) stating that the task could not be completed and the reason given.\n"
                     "- In Sources, list every URL from the 'Source URLs' section below, one per line. Include all links; do not omit any.\n"
                     '- In Limitations, include exactly: "This report is for research purposes only and does not constitute legal advice."'
                 ),

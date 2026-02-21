@@ -104,6 +104,7 @@ PROMPT_FALLBACKS: dict[str, list[dict]] = {
                 '- When stating legal points, cite exactly as written in notes (for example: "Under GDPR Article 25..." or "BDSG §26 provides...").\n'
                 "- In Key Findings, group by topic using ### subheadings.\n"
                 '- If support is uncertain or secondary, label it: "(secondary source - verify against primary legislation)".\n'
+                "- For any task listed in Task Summaries as 'Failed', include a brief note in the report (e.g. under Key Findings or Limitations) stating that the task could not be completed and the reason given.\n"
                 "- In Sources, list every URL from the 'Source URLs' section below, one per line. Include all links; do not omit any.\n"
                 '- In Limitations, include exactly: "This report is for research purposes only and does not constitute legal advice."'
             ),
@@ -370,11 +371,15 @@ def generate_final_report(state: AgentState) -> str:
     if len(context_blob) > 12000:
         context_blob = "...[earlier context truncated]\n" + context_blob[-11000:]
     task_summaries = "\n".join(
-        f"- **{t.title}**: {t.result or 'N/A'}"
-        + (
-            f" *(partially addressed — {t.reflection})*"
-            if t.reflect_status != "fully_addressed"
-            else ""
+        (
+            f"- **{t.title}**: Failed — {t.failure_reason or 'Unknown error'}"
+            if t.status == "failed"
+            else f"- **{t.title}**: {t.result or 'N/A'}"
+            + (
+                f" *(partially addressed — {t.reflection})*"
+                if t.reflect_status != "fully_addressed"
+                else ""
+            )
         )
         for t in state.tasks
     )

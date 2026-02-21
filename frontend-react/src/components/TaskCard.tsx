@@ -68,6 +68,13 @@ export function TaskCard({ task, taskNumber }: TaskCardProps) {
             </div>
           )}
 
+          {task.status === 'failed' && task.failure_reason && (
+            <div>
+              <p className="text-sm font-inter font-600 text-red-600 mb-2">Why this task failed</p>
+              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{task.failure_reason}</p>
+            </div>
+          )}
+
           {task.reflection && (
             <div>
               <p className="text-sm font-inter font-600 text-libra-dark-gray mb-2">Reflection</p>

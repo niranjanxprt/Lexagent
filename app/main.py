@@ -165,40 +165,57 @@ def execute_step(session_id: str, req: Request):
     if not state.is_active:
         raise HTTPException(status_code=400, detail="Session is already complete")
 
-    # Find the next pending task
+    # Find pending and failed tasks
     pending_tasks = [t for t in state.tasks if t.status == "pending"]
+    failed_tasks = [t for t in state.tasks if t.status == "failed"]
 
     if not pending_tasks:
-        # All tasks done — generate report
+        # No pending: generate report (full if all done, partial if any failed)
         report_path = generate_final_report(state)
         state.final_report_path = report_path
         state.is_active = False
         state.mode = "done"
         save_session(state)
+        if failed_tasks:
+            msg = f"Partial report generated ({len(failed_tasks)} task(s) failed). Report saved to {report_path}"
+        else:
+            msg = f"All tasks complete. Report saved to {report_path}"
         return ExecuteResponse(
             session_id=state.session_id,
             current_step=state.current_step,
             task_executed=None,
             is_done=True,
-            message=f"All tasks complete. Report saved to {report_path}",
+            message=msg,
         )
 
-    # Execute the first pending task
+    # Execute the first pending task (with retries)
     task = pending_tasks[0]
-    # Set in_progress and save BEFORE executing search. A crash during search_web()
-    # leaves the task in a recoverable in_progress state, not a phantom "pending".
     task.status = "in_progress"
     save_session(state)
 
-    try:
-        executed_task = execute_task(task, state)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
-    except Exception as e:
-        task.status = "failed"
-        save_session(state)
-        msg = str(e) if str(e) else "Task execution failed"
-        raise HTTPException(status_code=500, detail=f"Task execution failed: {msg}") from e
+    max_attempts = 3
+    last_exception = None
+    executed_task = None
+    for attempt in range(max_attempts):
+        try:
+            executed_task = execute_task(task, state)
+            break
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
+        except Exception as e:
+            last_exception = e
+            if attempt < max_attempts - 1:
+                continue
+            task.status = "failed"
+            task.failure_reason = (
+                str(last_exception) if str(last_exception) else "Task execution failed"
+            )
+            save_session(state)
+            msg = str(last_exception) if str(last_exception) else "Task execution failed"
+            raise HTTPException(
+                status_code=500,
+                detail=f"Task execution failed after {max_attempts} attempts: {msg}",
+            ) from last_exception
 
     # Update the task in state.tasks by index
     for i, t in enumerate(state.tasks):
@@ -209,12 +226,13 @@ def execute_step(session_id: str, req: Request):
     state.current_step += 1
     save_session(state)
 
+    msg = f"Executed: {executed_task.title}"
     return ExecuteResponse(
         session_id=state.session_id,
         current_step=state.current_step,
         task_executed=executed_task,
         is_done=False,
-        message=f"Executed: {executed_task.title}",
+        message=msg,
     )
 
 

@@ -42,21 +42,24 @@ def sanitize_user_input(text: str, max_length: int = 2000) -> str:
             f"Got {len(text)} characters."
         )
 
-    # Check for common prompt injection patterns
-    # Note: Patterns are kept specific to actual injection attempts, not legitimate legal language
+    # Check for common prompt injection patterns.
+    # Patterns are narrow so normal/benign input (legal phrasing, government reports) is not flagged.
     injection_patterns = [
-        # Clear instruction override attempts
-        r"(?i)(ignore|disregard|forget).*?(previous|prior|above|all).*?(instruction|prompt|message|rule)",
-        r"(?i)(system|admin).*?prompt",
-        # Jailbreak attempts
-        r"(?i)(jailbreak|bypass|override|circumvent).*?(restriction|safeguard|filter|guideline)",
-        # You are now prompts
-        r"(?i)you\s+are\s+now\s+",
-        # Do anything now patterns
-        r"(?i)do\s+(anything|whatever)\s+now",
+        # Instruction override: only when "instructions" (plural) or prompt/message/rule,
+        # and not when "court" or "jury" appears between (e.g. "ignore previous court instruction")
+        r"(?i)(ignore|disregard|forget)(?:(?!court|jury).)*(previous|prior|above|all)(?:(?!court|jury).)*\b(instructions|prompt|message|rule)\b",
+        # System/admin prompt: only clearly malicious (e.g. "system prompt:" to inject)
+        r"(?i)(system|admin)\s+prompt\s*:",
+        # Jailbreak: only "jailbreak" with safety terms (avoid "circumvent the regulation", "bypass procedures")
+        r"(?i)\bjailbreak\b.*?(restriction|safeguard|filter|guideline)",
+        # Role reassignment only: "you are now a/an/in/my" (not "you are now required/subject to/viewing")
+        r"(?i)you\s+are\s+now\s+(?:a|an|in|my)\b",
+        # Do anything now
+        r"(?i)\bdo\s+(anything|whatever)\s+now\b",
         # HTML/XML injection
         r"(?i)<\s*(script|iframe|embed|object)",
-        r"(?i)on\w+\s*=",  # Event handler injection
+        # Event handler injection: only common HTML handler names
+        r"(?i)\bon(click|load|error|submit|change|focus|blur|mouseover|mouseout|keydown|keyup)\s*=",
         # Command injection with shell operators
         r"(?i)(;|&&|\|\|)\s*(curl|wget|exec|sh|bash)",
     ]
