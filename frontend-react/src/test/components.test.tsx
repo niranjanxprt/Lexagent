@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { NewSession } from '../components/NewSession';
 
 // Mock the API
@@ -68,29 +68,29 @@ describe('NewSession Component', () => {
     render(<NewSession apiKeys={{}} onSessionCreated={onSessionCreated} />);
     const button = screen.getByRole('button') as HTMLButtonElement;
 
-    // Button should not be disabled initially (only disabled during loading)
     expect(button.disabled).toBe(false);
-
-    // Click button with empty textarea
     fireEvent.click(button);
 
-    // Error message should appear
-    await new Promise(resolve => setTimeout(resolve, 100));
-    const error = screen.queryByText('Please enter a research goal.');
-    expect(error).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Please enter a research goal.')).toBeInTheDocument();
+    });
   });
 
   it('should disable button when loading', async () => {
     const onSessionCreated = vi.fn();
     render(<NewSession apiKeys={{}} onSessionCreated={onSessionCreated} />);
-    const button = screen.getByRole('button') as HTMLButtonElement;
     const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
 
     fireEvent.change(textarea, { target: { value: 'Research topic' } });
-    fireEvent.click(button);
+    fireEvent.click(screen.getByRole('button'));
 
-    // Button should be disabled during loading
-    expect(button.disabled).toBe(true);
-    expect(button.textContent).toContain('Generating Research Plan...');
+    await waitFor(() => {
+      const button = screen.getByRole('button') as HTMLButtonElement;
+      expect(button.disabled).toBe(true);
+      expect(button.textContent).toContain('Generating Research Plan...');
+    });
+    await waitFor(() => {
+      expect(onSessionCreated).toHaveBeenCalled();
+    });
   });
 });

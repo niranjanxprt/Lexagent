@@ -55,6 +55,11 @@ def search_web(query: str) -> dict:
 def save_report(session_id: str, goal: str, content: str) -> str:
     """
     Save a markdown report to /reports/{session_id}.md.
+
+    content is the raw model output and must start with ## Executive Summary
+    per the report prompt. The written file is a metadata block (title, goal,
+    timestamp) + separator + content.
+
     Returns the file path as a string.
     """
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)

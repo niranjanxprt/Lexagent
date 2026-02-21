@@ -69,7 +69,7 @@ lint-fix:
 test:
 	@echo "Running Python backend tests (no API keys needed)..."
 	@echo ""
-	uv run python -c "from app.models import Task, AgentState; from app.storage import save_session, load_session; task = Task(title='Test', description='Test'); state = AgentState(goal='Test', tasks=[task]); save_session(state); loaded = load_session(state.session_id); assert loaded.goal == state.goal; print('✅ All core tests passed!')"
+	uv run python -m pytest tests/ -v
 
 react-test:
 	@echo "Running React frontend tests..."

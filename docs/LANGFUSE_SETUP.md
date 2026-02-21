@@ -1,6 +1,6 @@
 # Langfuse Prompt Management Setup for LexAgent
 
-This guide explains how to externalize LexAgent prompts to Langfuse for centralized management and non-technical editing.
+This guide explains how to externalize LexAgent prompts to Langfuse for centralized management and non-technical editing. If Langfuse is unavailable on cold start, the agent falls back to inline prompts and remains usable (see [Fallback Behavior](#fallback-behavior)).
 
 ## What Changed
 
@@ -140,9 +140,9 @@ prompt = langfuse.get_prompt("legal-research/generate-plan", cache_ttl_seconds=0
 
 ## Fallback Behavior
 
-If Langfuse is unavailable, the agent will fail gracefully (no silent fallback). This is intentional - it helps you catch connectivity issues.
+If Langfuse is unavailable on cold start, the agent falls back to inline prompts (`PROMPT_FALLBACKS` in `agent.py`). This keeps the agent usable when Langfuse is unreachable. For production, ensure Langfuse credentials are set so prompts are versioned and traced.
 
-If you want to add a fallback prompt for resilience, you can use:
+To customize fallback behavior:
 ```python
 from langfuse import LangfuseError
 
@@ -200,9 +200,10 @@ If you see connection errors, verify:
 
 ## Reverting to Hardcoded Prompts
 
-If you want to revert to hardcoded prompts, see `app/agent.py.backup` (which doesn't exist, but you can revert via git):
+To revert to hardcoded prompts, restore `app/agent.py` from git:
+
 ```bash
 git checkout HEAD -- app/agent.py
 ```
 
-This will restore the original hardcoded prompts.
+This will restore the version with inline prompts (and remove Langfuse fetches).

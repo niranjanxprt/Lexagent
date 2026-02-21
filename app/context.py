@@ -1,6 +1,9 @@
 """
 Request-scoped API key overrides from frontend.
 When set, these override env vars for the current request.
+Keys are stored in a ContextVar; they are never written to os.environ, so one
+request cannot affect another under concurrency. Each FastAPI request gets its
+own context.
 Author: niranjanxprt (https://github.com/niranjanxprt)
 """
 from contextvars import ContextVar

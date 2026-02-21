@@ -72,6 +72,7 @@ Connecting GitHub to Railway triggers deploys on push; variables and volumes are
 | Add Railway volume `/app/data` | `railway volume add --mount-path /app/data` |
 | Set Railway model | `railway variables --set OPENAI_MODEL=gpt-4.1-mini` |
 | List Langfuse prompts | `npx langfuse-cli --env .env api prompts list` |
+| List Langfuse datasets | `npx langfuse-cli --env .env api datasets list` |
 | List Railway volumes | `railway volume list` |
 | List Railway variables | `railway variables` |
 

@@ -288,14 +288,14 @@ Every session produces a trace in Langfuse: per-task sub-spans, token usage, lat
 ## Trade-offs
 
 - **No agent framework** — Explicit state machine and no hidden framework state; more boilerplate, full control and clear Langfuse tracing.
-- **Single tool (Tavily)** — Every task uses web search; predictable execution path; synthesis still triggers a search call.
+- **Single tool (Tavily)** — Every task uses web search; predictable execution path; report synthesis uses compiled research notes (no extra search during report generation).
 - **No RAG over private docs** — Public web only; extension path: add a document-search tool without changing the loop.
 - **JSON persistence** — Sessions in `data/`; simple and auditable; not for high-concurrency production; swap via `storage.py` for SQLite/Postgres.
-- **CORS** — Demo uses `allow_origins=["*"]` for evaluator convenience; production should restrict to known frontend origins.
+- **CORS** — Demo uses an explicit localhost allowlist (ports 3000, 5173, 5174, 8000); production should restrict to known frontend origins.
 
 ## Known limitations
 
-- **Security false positives:** Queries containing “act as”, “assume the role of”, or “roleplay” may be blocked; rephrase (e.g. “obligations of a data processor under GDPR Article 28”).
+- **Security false positives:** Queries containing instruction-override phrases (e.g. "ignore previous instructions", "you are now"), jailbreak wording, or HTML/script patterns may be blocked; rephrase to neutral legal language (e.g. “obligations of a data processor under GDPR Article 28”).
 - **Retry:** Tavily uses 3-attempt retry with backoff; OpenAI timeouts still fail the current task; session stays resumable.
 - **Context cap:** `context_notes` is truncated at 8,000 chars in execution and 12,000 in the report for long sessions.
 

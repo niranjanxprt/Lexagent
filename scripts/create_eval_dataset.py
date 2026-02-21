@@ -64,11 +64,12 @@ def create_dataset():
         print(f"Dataset may already exist: {e}")
 
     for ex in EXAMPLES:
+        metadata = {**ex.get("metadata", {}), "name": ex["name"]}
         langfuse.create_dataset_item(
             dataset_name=DATASET_NAME,
             input=ex["input"],
             expected_output=ex["expected_output"],
-            metadata=ex.get("metadata", {}),
+            metadata=metadata,
         )
         print(f"  ✅ Added item: {ex['name']}")
 

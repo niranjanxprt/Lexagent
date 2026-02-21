@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -81,14 +80,12 @@ def health_check():
 
 
 def _apply_api_key_headers(req: Request) -> None:
-    """Read optional API key headers and set request-scoped context and env for OpenAI client."""
+    """Read optional API key headers and set request-scoped context (no global env mutation).
+    Every agent endpoint that calls the LLM (start, step, run) invokes this first."""
     openai_key = req.headers.get("X-OpenAI-API-Key")
     tavily_key = req.headers.get("X-Tavily-API-Key")
     if openai_key or tavily_key:
         set_api_keys(openai_key=openai_key, tavily_key=tavily_key)
-    # So Langfuse/OpenAI client uses per-request key (client reads OPENAI_API_KEY from env).
-    if openai_key and openai_key.strip():
-        os.environ["OPENAI_API_KEY"] = openai_key.strip()
 
 
 @app.post("/agent/start", response_model=AgentState, status_code=201)

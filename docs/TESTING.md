@@ -14,6 +14,10 @@ make test
 
 Covers: model validation (Task, AgentState), storage save/load, and that core imports (including agent and security) work.
 
+#### Backend test scope
+
+Pytest covers: models (Task, AgentState, ResearchPlan, ReflectResult), storage save/load round-trip, tools.save_report (file content and metadata), security (validate_goal, validate_search_results, including that search results allow benign "You are now…" text), and agent state transitions (task status in_progress/done with save/load). Real LLM and Tavily behavior are left to manual runs and evaluation docs.
+
 ### React frontend
 
 ```bash

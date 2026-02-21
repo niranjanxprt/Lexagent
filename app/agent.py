@@ -6,13 +6,12 @@ from langfuse import get_client, observe, propagate_attributes
 from langfuse.openai import openai
 from pydantic import BaseModel, ValidationError
 
+from app.context import get_api_keys
 from app.models import AgentState, ReflectResult, ResearchPlan, Task
+from app.security import validate_search_results
+from app.tools import save_report, search_web
 
 logger = logging.getLogger(__name__)
-from app.security import (
-    validate_search_results,
-)
-from app.tools import save_report, search_web
 
 # Initialize Langfuse with graceful fallback if credentials are missing
 try:
@@ -185,6 +184,10 @@ def call_llm(
         "model": model or os.environ.get("OPENAI_MODEL", "gpt-4.1-mini"),
         "messages": messages,
     }
+    # Request-scoped key only; we never mutate os.environ.
+    api_key = get_api_keys().get("openai")
+    if api_key:
+        kwargs["api_key"] = api_key
     if use_json:
         kwargs["response_format"] = {"type": "json_object"}
     if langfuse_prompt:
@@ -395,5 +398,6 @@ def generate_final_report(state: AgentState) -> str:
         langfuse_prompt=report_prompt,
         model=_full_model(),
     )
+    # Prompt requires output to start with ## Executive Summary; save_report prepends metadata.
     path = save_report(state.session_id, state.goal, report_content)
     return path

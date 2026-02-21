@@ -14,7 +14,7 @@ LexAgent is a legal research agent built with a manual agent loop (no LangChain/
 ┌─────────────────────────────────────────────────────────────────┐
 │                         Browser                                   │
 │                  React (Vite + TypeScript)                        │
-│          http://localhost:3000 (dev) or /:8000 (prod)            │
+│  localhost:5173 (make dev) or :3000 (docker-compose) or :8000 (prod) │
 └────────────────────────────┬────────────────────────────────────┘
                              │ REST API
 ┌────────────────────────────▼────────────────────────────────────┐

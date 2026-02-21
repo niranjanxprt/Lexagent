@@ -132,6 +132,112 @@ The script runs plan → execute all tasks → report for each goal, writes repo
 
 ---
 
+## Reflect eval scripts (Langfuse dataset)
+
+The repo includes scripts that create and run a **reflect**-focused eval against a Langfuse dataset (no full agent run; just the reflect prompt and scoring).
+
+**Data:** You have **golden data** once the dataset is created: run `uv run python scripts/create_eval_dataset.py` to populate `lexagent-eval-v1` with 4 items (3 reflect + 1 plan). For more coverage, add items from production traces (see [Build a dataset from traces](#1-build-a-dataset-from-traces-ui) below).
+
+**Scoring options:**
+
+| Method | Script | Use when |
+|--------|--------|----------|
+| **Deterministic** | `run_eval.py` | You want exact status match (fast, no extra LLM cost). |
+| **LLM-as-a-Judge** | `run_eval_llm_judge.py` | You want semantic correctness (status + gap) or qualitative scoring. |
+
+- **Dataset name:** `lexagent-eval-v1`
+- **Create dataset (one-time):** `scripts/create_eval_dataset.py` — creates the dataset with golden examples (reflect + one plan example). Run: `uv run python scripts/create_eval_dataset.py`
+- **Run reflect eval (deterministic):** `scripts/run_eval.py` — loads the dataset, filters items for `legal-research/reflect`, runs each through the reflect prompt, scores JSON output (status match), and posts scores to Langfuse via `item.run(...)` and `root_span.score_trace(...)`. Run: `uv run python scripts/run_eval.py`
+- **Run reflect eval (LLM-as-a-Judge):** `scripts/run_eval_llm_judge.py` — same dataset and reflect prompt, but one or more judge models (default: GPT-4.1 and GPT-4.1-mini) score 0–1 whether the output is semantically correct (status and gap). Run: `uv run python scripts/run_eval_llm_judge.py` or use the CLI wrapper below.
+
+Requires `.env` with Langfuse and OpenAI keys. Scores appear in the Langfuse dashboard under the dataset run.
+
+### LLM-as-a-Judge with GPT-4.1 and GPT-4.1-mini (Langfuse CLI)
+
+To run both judges and register score configs via the Langfuse CLI:
+
+1. **One-time: create score configs** (so scores show in the dashboard with the right names and 0–1 range):
+
+   ```bash
+   npx langfuse-cli --env .env api score-configs create --name "reflect-llm-judge-gpt-4.1" --dataType NUMERIC --minValue 0 --maxValue 1 --description "LLM-as-judge (GPT-4.1) for reflect step"
+   npx langfuse-cli --env .env api score-configs create --name "reflect-llm-judge-gpt-4.1-mini" --dataType NUMERIC --minValue 0 --maxValue 1 --description "LLM-as-judge (GPT-4.1-mini) for reflect step"
+   ```
+
+2. **Run the eval** (both judges on the 4 dataset items; scores are posted to Langfuse):
+
+   ```bash
+   ./scripts/run_eval_llm_judge_cli.sh
+   ```
+
+   The script uses the Langfuse CLI for score configs and dataset listing, Python for the eval, and the SDK for posting scores. To post scores via **curl** (Langfuse REST API) instead of the SDK—e.g. when the CLI `scores create` lacks `--value`—use:
+
+   ```bash
+   ./scripts/run_eval_llm_judge_cli.sh --scores-via-curl
+   ```
+
+   That flow writes trace IDs and scores to a temp file, then `post_scores_via_curl.sh` posts each via `curl` to `POST /api/public/scores`. To use only one judge: `uv run python scripts/run_eval_llm_judge.py --judges gpt-4.1`.
+
+3. **Optional CLI checks:**
+
+   ```bash
+   npx langfuse-cli --env .env api score-configs get-public
+   npx langfuse-cli --env .env api datasets get-get-runs lexagent-eval-v1 --limit 5
+   npx langfuse-cli --env .env api score-v2s get-scores --limit 10
+   ```
+
+   **Note:** The Langfuse CLI `scores create` does not expose a `--value` parameter. To create scores from the command line, use `./scripts/run_eval_llm_judge_cli.sh --scores-via-curl`, which posts scores via the REST API with `curl`.
+
+### Where scores appear in Langfuse (script-based eval)
+
+Our scripts (`run_eval.py`, `run_eval_llm_judge.py`) post scores via `root_span.score_trace(name=..., value=...)` inside `item.run()`. You **do not** see an "Evaluator" in the Langfuse UI because we use a custom script, not Langfuse's managed evaluator. Scores appear here:
+
+1. **Datasets** → **lexagent-eval-v1** → **Runs** tab
+2. Click a run (e.g. `reflect-eval-llm-judge-v1`)
+3. Each run item has a trace; open it to see scores (`reflect-llm-judge-gpt-4.1`, `reflect-llm-judge-gpt-4.1-mini`, etc.)
+4. **Analytics** → **Scores** → filter by object type **Dataset Run Items** to compare across runs
+
+Score configs (created via CLI) define the schema (name, 0–1 range) so scores display correctly in the dashboard.
+
+### Creating a Langfuse Evaluator (UI-based, for Prompt Experiments)
+
+To have Langfuse **automatically** score outputs when you run experiments from the UI (Datasets → Start Experiment):
+
+1. **Evaluators** → **Set up Evaluator**
+2. **Default model:** Choose an LLM connection (e.g. GPT-4.1-mini) for the judge
+3. **Evaluator:** Pick **Custom Evaluator** (or a Managed one like Correctness)
+4. **Evaluation prompt:** Use placeholders `{{input}}`, `{{output}}`, `{{ground_truth}}` and a rubric (e.g. "Score 0–1: 1 = output matches expected status and gap")
+5. **Target:** **Offline Experiment Data** → filter by dataset `lexagent-eval-v1`
+6. **Variable mapping:** Map `input` → dataset item `input`, `output` → trace output, `ground_truth` → `expected_output`
+7. Save. When you run a Prompt Experiment (Datasets → Start Experiment → Create), select this evaluator; it will run automatically and attach scores.
+
+See [Langfuse: LLM-as-a-Judge](https://langfuse.com/docs/evaluation/evaluation-methods/llm-as-a-judge) for the full UI flow.
+
+### LLM-as-a-Judge (reflect and beyond)
+
+[LLM-as-a-Judge](https://langfuse.com/docs/evaluation/llm-as-a-judge) is an evaluation method where a judge model assesses application outputs against a rubric (input, output, optional ground truth). It scales better than human review and captures nuance when the rubric is clear.
+
+- **In this repo:** `scripts/run_eval_llm_judge.py` implements a custom judge for the reflect step (rubric: correct status and gap). You can extend the same pattern for report quality (e.g. accuracy, specificity, citations) and post scores via `root_span.score_trace(...)`.
+- **In Langfuse:** For Experiments (dataset runs), you can attach **Managed** or **Custom** evaluators in the UI so the judge runs automatically on each run. Evaluators → Set up Evaluator → choose target **Offline Experiment Data** → map variables (e.g. `input`, `output`, `ground_truth`) to your dataset item fields. See [Langfuse: LLM-as-a-Judge](https://langfuse.com/docs/evaluation/llm-as-a-judge) for the full setup (default model, rubric, variable mapping, Experiments via UI/SDK).
+
+**Is the dataset already in Langfuse?** No. The dataset `lexagent-eval-v1` is created when you run the create script (or the CLI/UI steps below). Until then, it does not exist in your Langfuse project.
+
+**Create the dataset via Langfuse CLI (optional):** You can create the empty dataset with the CLI, then add items via the Python script or UI:
+
+```bash
+# Create empty dataset
+npx langfuse-cli --env .env api datasets create --name lexagent-eval-v1 --description "Golden examples for LexAgent prompt evaluation"
+
+# List datasets to confirm
+npx langfuse-cli --env .env api datasets list
+
+# List items in the dataset (use --dataset-name)
+npx langfuse-cli --env .env api dataset-items list --dataset-name lexagent-eval-v1
+```
+
+To add the golden items (input, expected_output, metadata), the Python script is the easiest: run `uv run python scripts/create_eval_dataset.py`. The script will create the dataset if it does not exist, then add all items. Alternatively add items in the Langfuse UI (Datasets → lexagent-eval-v1 → Add item) or via the API/CLI with JSON body for each item.
+
+---
+
 ## Eval Using Langfuse Logs (Traces)
 
 You can turn production or test traces into datasets, run experiments (e.g. different prompt versions), and attach scores so evals are repeatable and comparable.
@@ -216,7 +322,7 @@ result = dataset.run_experiment(name="v4-report-eval", task=run_report)
   ```bash
   npx langfuse-cli --env .env api scores create --traceId <trace_id> --name report_quality --value 0.85
   ```
-- **SDK:** `langfuse.score(trace_id=..., name="report_quality", value=0.85)` (or session-level score). Use this from your own eval script that reads trace output and computes a metric.
+- **SDK:** `langfuse.score(trace_id=..., name="report_quality", value=0.85)` (or session-level score). Use this from your own eval script that reads trace output and computes a metric. For **dataset-based evals**, use `item.run(...)` as a context manager and `root_span.score_trace(name=..., value=...)` so scores attach to the dataset run (see `scripts/run_eval.py`).
 
 Linking scores to traces (and to prompt versions via the trace’s generations) lets you compare prompt versions in Langfuse (e.g. Metrics per prompt version).
 

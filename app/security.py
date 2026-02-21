@@ -82,6 +82,31 @@ def sanitize_user_input(text: str, max_length: int = 2000) -> str:
     return text
 
 
+def sanitize_search_result_content(text: str, max_length: int = 5000) -> str:
+    """
+    Sanitize search result title or content for length and structural safety only.
+
+    User-facing input uses strict injection checks (sanitize_user_input); search
+    results use this lighter check to avoid false positives on legitimate source
+    text (e.g. "You are now required to disclose").
+    """
+    if not isinstance(text, str):
+        raise PromptInjectionError(f"Input must be string, got {type(text)}")
+    if len(text) > max_length:
+        raise PromptInjectionError(
+            f"Input exceeds maximum length of {max_length} characters. "
+            f"Got {len(text)} characters."
+        )
+    control_char_count = sum(1 for c in text if ord(c) < 32 and c not in '\n\t\r')
+    if control_char_count > 5:
+        raise PromptInjectionError(
+            f"Excessive control characters detected ({control_char_count})"
+        )
+    if '\x00' in text:
+        raise PromptInjectionError("Null bytes detected in input")
+    return text
+
+
 def validate_goal(goal: str) -> str:
     """
     Validate and sanitize the research goal.
@@ -149,14 +174,8 @@ def validate_search_results(results: dict) -> dict:
     """
     Validate and sanitize search results from Tavily.
 
-    Args:
-        results: Search results dictionary
-
-    Returns:
-        Sanitized results
-
-    Raises:
-        PromptInjectionError: If results contain malicious content
+    Uses length and structural safety only (sanitize_search_result_content), not
+    full user-input injection patterns, to avoid false positives on benign text.
     """
     if not isinstance(results, dict):
         raise PromptInjectionError("Search results must be a dictionary")
@@ -176,11 +195,11 @@ def validate_search_results(results: dict) -> dict:
         if not all(key in item for key in ["title", "url", "content"]):
             raise PromptInjectionError("Search result missing required fields")
 
-        # Sanitize content, but allow URLs (they're from Tavily)
+        # Sanitize with search-result-safe checks only (no injection patterns)
         sanitized_item = {
-            "title": sanitize_user_input(item["title"], max_length=500),
+            "title": sanitize_search_result_content(item["title"], max_length=500),
             "url": item["url"],  # URL from Tavily is trusted
-            "content": sanitize_user_input(item["content"], max_length=5000),
+            "content": sanitize_search_result_content(item["content"], max_length=5000),
         }
         sanitized_results.append(sanitized_item)
 
