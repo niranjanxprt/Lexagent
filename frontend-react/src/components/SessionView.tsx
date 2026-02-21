@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Trash2, Loader2 } from 'lucide-react';
+import { Trash2, Loader2, ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
 import { fetchAgentState, deleteSession } from '../lib/api';
 import type { APIKeys } from '../types';
 import { AgentState } from '../types';
@@ -8,6 +8,76 @@ import { FinalReport } from './FinalReport';
 import { ExecutionControls } from './ExecutionControls';
 import { ErrorMessage } from './ErrorMessage';
 import { formatSessionId } from '../utils/format';
+
+function ContextNotesSection({ notes }: { notes: string[] }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const markdown = notes.map((n) => `- ${n}`).join('\n');
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(markdown);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // fallback for older browsers
+      const ta = document.createElement('textarea');
+      ta.value = markdown;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  return (
+    <div className="border border-libra-border rounded-lg overflow-hidden">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full px-4 py-3 bg-libra-light-gray hover:bg-gray-200 transition-colors flex items-center justify-between"
+      >
+        <h2 className="text-xl font-manrope font-700 text-libra-black">Accumulated Research Context</h2>
+        {isOpen ? (
+          <ChevronUp className="w-5 h-5 text-gray-700" />
+        ) : (
+          <ChevronDown className="w-5 h-5 text-gray-700" />
+        )}
+      </button>
+      {isOpen && (
+        <div className="p-4 bg-white border-t border-libra-border space-y-4">
+          <div className="flex justify-end">
+            <button
+              onClick={handleCopy}
+              className="flex items-center gap-2 px-4 py-2 bg-libra-black text-white rounded-lg font-manrope font-600 text-sm hover:bg-libra-dark-gray transition-colors"
+            >
+              {copied ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4" />
+                  Copy Markdown
+                </>
+              )}
+            </button>
+          </div>
+          <div className="space-y-2">
+            {notes.map((note, idx) => (
+              <p key={idx} className="text-sm text-gray-700 font-inter">
+                • {note}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface SessionViewProps {
   sessionId: string;
@@ -124,18 +194,9 @@ export function SessionView({ sessionId, apiKeys, onSessionDeleted }: SessionVie
         </div>
       </div>
 
-      {/* Context Notes */}
+      {/* Context Notes - Collapsible, collapsed by default */}
       {state.context_notes.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-xl font-manrope font-700 text-libra-black">Accumulated Research Context</h2>
-          <div className="p-4 bg-libra-light-gray border border-libra-border rounded-lg space-y-2">
-            {state.context_notes.map((note, idx) => (
-              <p key={idx} className="text-sm text-gray-700 font-inter">
-                • {note}
-              </p>
-            ))}
-          </div>
-        </div>
+        <ContextNotesSection notes={state.context_notes} />
       )}
 
       {/* Final Report */}

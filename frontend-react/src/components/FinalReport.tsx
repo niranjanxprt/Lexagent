@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Download, ChevronDown, ChevronUp } from 'lucide-react';
+import { Download, ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { fetchReport } from '../lib/api';
@@ -16,6 +16,7 @@ export function FinalReport({ sessionId, reportPath }: FinalReportProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showSource, setShowSource] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const loadReport = async () => {
@@ -59,18 +60,52 @@ export function FinalReport({ sessionId, reportPath }: FinalReportProps) {
     downloadMarkdown(report, `research_report_${sessionId.substring(0, 8)}.md`);
   };
 
+  const handleCopy = async () => {
+    if (!report) return;
+    try {
+      await navigator.clipboard.writeText(report);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = report;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Report header + Download */}
+      {/* Report header + Download + Copy */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="md:col-span-3 flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-300 rounded-lg">
+        <div className="md:col-span-2 flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-300 rounded-lg">
           <span className="text-xl">✅</span>
           <span className="text-sm font-inter font-600 text-green-700">Report ready for download</span>
         </div>
-        <div>
+        <div className="flex gap-2">
+          <button
+            onClick={handleCopy}
+            className="flex-1 px-4 py-3 bg-libra-black text-white rounded-lg font-manrope font-600 text-sm hover:bg-libra-dark-gray transition-colors flex items-center justify-center gap-2"
+          >
+            {copied ? (
+              <>
+                <Check className="w-4 h-4" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <Copy className="w-4 h-4" />
+                Copy MD
+              </>
+            )}
+          </button>
           <button
             onClick={handleDownload}
-            className="w-full px-4 py-3 bg-libra-black text-white rounded-lg font-manrope font-600 text-sm hover:bg-libra-dark-gray transition-colors flex items-center justify-center gap-2"
+            className="flex-1 px-4 py-3 bg-libra-black text-white rounded-lg font-manrope font-600 text-sm hover:bg-libra-dark-gray transition-colors flex items-center justify-center gap-2"
           >
             <Download className="w-4 h-4" />
             Download MD
