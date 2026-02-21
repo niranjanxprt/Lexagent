@@ -406,7 +406,7 @@ Report saved to: reports/a1b2c3d4.md
 Session marked COMPLETE.
 ```
 
-**User sees:** Final report rendered in Streamlit with download button; session marked as COMPLETE.
+**User sees:** Final report rendered in the UI with download button; session marked as COMPLETE.
 
 ---
 

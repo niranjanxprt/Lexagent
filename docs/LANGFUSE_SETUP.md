@@ -190,7 +190,7 @@ If you see connection errors, verify:
 
 1. ✅ Run `uv run python app/init_langfuse_prompts.py`
 2. ✅ Verify prompts in Langfuse dashboard
-3. ✅ Start the agent: `make dev`
+3. ✅ Start the agent: `make dev` (backend + React) or `make backend` and `make react` in separate terminals
 4. ✅ Create a research session and execute tasks
 5. ✅ Watch prompts being used in Langfuse dashboard
 6. ✅ Edit prompts and see changes reflected on next task execution (within cache TTL)

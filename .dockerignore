@@ -8,7 +8,6 @@ node_modules
 frontend-react/node_modules
 frontend-react/dist
 frontend-react/Dockerfile
-Dockerfile.streamlit
 data
 reports
 .env
@@ -20,7 +19,6 @@ reports
 .idea
 *.md
 !README.md
-.streamlit
 .langfuse
 docs/
 .python-version

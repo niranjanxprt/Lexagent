@@ -10,7 +10,6 @@ dependencies = [
     "openai>=1.35.0",
     "tavily-python>=0.3.3",
     "langfuse>=3.0.0",
-    "streamlit>=1.35.0",
     "requests>=2.32.0",
     "python-dotenv>=1.0.0",
     "httpx>=0.27.0",

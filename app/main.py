@@ -6,7 +6,6 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
-
 from openai import APIError, AuthenticationError
 
 from app.agent import execute_task, generate_final_report, generate_plan
@@ -37,10 +36,6 @@ app.add_middleware(
         "http://127.0.0.1:5174",
         "http://localhost:8000",
         "http://127.0.0.1:8000",
-        "http://localhost:8501",
-        "http://localhost:8502",
-        "http://127.0.0.1:8501",
-        "http://127.0.0.1:8502",
     ],
     allow_credentials=True,
     allow_methods=["*"],

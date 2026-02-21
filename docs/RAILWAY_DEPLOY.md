@@ -122,7 +122,6 @@ The app creates these directories on startup when the mount is writable.
 
 - **Langfuse:** Run `uv run python app/init_langfuse_prompts.py` locally once with `LANGFUSE_*` set; prompts live in Langfuse. If Langfuse is unreachable at runtime, the agent uses inline fallback prompts.
 - **Frontend:** The same container serves the React app at `/` and the API at `/agent/*` and `/docs`. No separate frontend deploy needed.
-- **Streamlit:** Not run on Railway. Use the React UI, or run Streamlit locally with `LEXAGENT_API_URL=https://your-app.railway.app`.
 
 ## Troubleshooting
 

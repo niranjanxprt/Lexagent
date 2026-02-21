@@ -86,7 +86,7 @@ Legal research quality is hard to measure with simple accuracy metrics — the s
 ## How to Run Evaluations
 
 **Manual (current):**
-1. Run the demo goal through the system (Streamlit or React).
+1. Run the demo goal through the system (React).
 2. Open the generated markdown report.
 3. Check each required element against the checklist.
 4. Score Pass / Partial / Fail.

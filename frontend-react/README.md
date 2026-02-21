@@ -1,6 +1,6 @@
 # LexAgent React Frontend
 
-React + TypeScript frontend for LexAgent. Provides the same functionality as the Streamlit UI with a modern, responsive interface.
+React + TypeScript frontend for LexAgent. Provides a modern, responsive interface for the legal research AI agent.
 
 ## Features
 

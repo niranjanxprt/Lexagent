@@ -61,7 +61,7 @@ export function FinalReport({ sessionId, reportPath }: FinalReportProps) {
 
   return (
     <div className="space-y-6">
-      {/* Report header + Download (Streamlit-style columns) */}
+      {/* Report header + Download */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="md:col-span-3 flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-300 rounded-lg">
           <span className="text-xl">✅</span>
@@ -78,7 +78,7 @@ export function FinalReport({ sessionId, reportPath }: FinalReportProps) {
         </div>
       </div>
 
-      {/* Preview Markdown Source (matches Streamlit expander) */}
+      {/* Preview Markdown Source */}
       <div className="border border-libra-border rounded-lg overflow-hidden">
         <button
           onClick={() => setShowSource(!showSource)}

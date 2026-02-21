@@ -37,7 +37,7 @@ Runs both Python and React tests.
 ```bash
 make lint
 # or
-uv run ruff check app/ frontend/
+uv run ruff check app/
 ```
 
 Fix auto-fixable issues: `make lint-fix`.
@@ -74,9 +74,6 @@ Verify: `curl http://localhost:8000/health` → `{"status":"ok"}`
 ### 3. Start frontend
 
 ```bash
-# Streamlit
-make frontend
-# or React
 make react
 ```
 

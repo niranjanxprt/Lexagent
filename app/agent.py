@@ -4,11 +4,8 @@ import os
 from langfuse import get_client, observe, propagate_attributes
 from langfuse.openai import openai
 
-from app.context import get_api_keys
 from app.models import AgentState, Task
 from app.security import (
-    PromptInjectionError,
-    sanitize_user_input,
     validate_search_results,
 )
 from app.tools import save_report, search_web

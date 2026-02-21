@@ -2,12 +2,12 @@
 
 ## Current: Railway (Docker)
 
-LexAgent is deployed as a single container: the Dockerfile builds the React frontend and the Python backend serves both the API and the React app. Streamlit is **not** run on Railway; use the React UI or run Streamlit locally against the deployed API.
+LexAgent is deployed as a single container: the Dockerfile builds the React frontend and the Python backend serves both the API and the React app.
 
 ### How the Docker build works
 
 - **Stage 1 (frontend):** Node builds `frontend-react` with `npm run build:docker`; output is copied to `./static`.
-- **Stage 2 (runtime):** Python 3.11 image; `app/`, `frontend/`, `static/`, and `start.sh` are copied. `start.sh` runs `uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}`.
+- **Stage 2 (runtime):** Python 3.11 image; `app/`, `static/`, and `start.sh` are copied. `start.sh` runs `uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}`.
 
 Served paths:
 
@@ -37,6 +37,16 @@ Sessions and reports are written to `/app/data` and `/app/reports`. Without a vo
 
 The app does not create these directories on a read-only filesystem; the volume mount provides a writable path.
 
+### Pre-merge verification (dev → main)
+
+Before merging dev to main, run:
+
+```bash
+bash scripts/verify_before_merge.sh
+```
+
+This runs tests, lint, Docker build, and endpoint checks. Railway uses the same Dockerfile; no Streamlit—backend serves React at `/` and API at `/agent/*`.
+
 ### Deploy
 
 - **CLI:** `railway up` (from project root; uses `railway.toml` and Dockerfile).
@@ -54,22 +64,24 @@ Configure in Railway: **Settings → Health Check** with path `/health` if neede
 
 ---
 
-## Local Docker (API + React, optional Streamlit)
+## Local Docker (API + React)
+
+The backend image builds React and serves it at `/`. One container = full app.
 
 ```bash
-# Backend only (API + React at http://localhost:8000)
 docker compose up --build backend
-
-# Backend + Streamlit (Streamlit at http://localhost:8501, talks to backend)
-docker compose up --build
 ```
+
+- **http://localhost:8000** — React UI + API (same as Railway)
+
+Or `docker compose up --build` to also run a separate React container on :3000; the backend alone is enough for testing.
 
 Volumes in `docker-compose.yml`:
 
 - `./data:/app/data` — session JSON
 - `./reports:/app/reports` — report markdown
 
-So data persists across container restarts. Same behavior as running `make backend` and `make frontend` locally with the same env.
+Data persists across container restarts. Same behavior as running `make backend` and `make react` locally.
 
 ---
 
@@ -83,14 +95,13 @@ uv run python app/init_langfuse_prompts.py   # if using Langfuse
 # Terminal 1
 make backend    # http://localhost:8000
 
-# Terminal 2 — pick one
-make frontend  # Streamlit http://localhost:8501
+# Terminal 2
 make react     # React dev server http://localhost:5173
 ```
 
-Or `make dev` to start backend and Streamlit in the background (see Makefile).
+Or `make dev` to start backend and React together (see Makefile).
 
-**Local testing URLs:** With the backend running, use **http://localhost:8000/health** (`{"status":"ok"}`), **http://localhost:8000/docs** (Swagger), **http://localhost:8000/sessions** (list sessions). With Streamlit: **http://localhost:8501**. With React dev: **http://localhost:5173**. Smoke test: `curl http://localhost:8000/health`.
+**Local testing URLs:** With the backend running, use **http://localhost:8000/health** (`{"status":"ok"}`), **http://localhost:8000/docs** (Swagger), **http://localhost:8000/sessions** (list sessions). With React dev: **http://localhost:5173**. Smoke test: `curl http://localhost:8000/health`.
 
 ---
 

@@ -51,7 +51,7 @@ reports/*.md
 !data/.gitkeep
 !reports/.gitkeep
 
-# Streamlit
+# Streamlit (removed from project)
 .streamlit/
 
 # Langfuse

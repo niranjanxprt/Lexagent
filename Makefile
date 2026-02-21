@@ -1,4 +1,4 @@
-.PHONY: help install setup backend frontend dev lint lint-fix test clean logs kill react-install react react-build
+.PHONY: help install setup backend dev lint lint-fix test clean logs kill react-install react react-build
 
 help:
 	@echo "LexAgent - Makefile Commands"
@@ -10,10 +10,9 @@ help:
 	@echo "  make setup          Copy .env.example to .env"
 	@echo ""
 	@echo "Running:"
-	@echo "  make backend        Start FastAPI backend on port 8000"
-	@echo "  make frontend       Start Streamlit UI on port 8501"
-	@echo "  make react          Start React frontend on port 5173"
-	@echo "  make dev            Run backend + Streamlit frontend together"
+	@echo "  make backend       Start FastAPI backend on port 8000"
+	@echo "  make react         Start React frontend on port 5173"
+	@echo "  make dev           Run backend + React together"
 	@echo ""
 	@echo "Development:"
 	@echo "  make lint           Run Ruff linter"
@@ -47,30 +46,25 @@ backend:
 	@echo "API Docs: http://localhost:8000/docs"
 	uv run uvicorn app.main:app --port 8000 --reload
 
-frontend:
-	@echo "Starting Streamlit UI on port 8501..."
-	@echo "UI: http://localhost:8501"
-	uv run streamlit run frontend/ui.py
-
 dev:
-	@echo "Starting LexAgent (Backend + Frontend)..."
+	@echo "Starting LexAgent (Backend + React)..."
 	@echo ""
 	@echo "Backend:  http://localhost:8000"
-	@echo "Frontend: http://localhost:8501"
+	@echo "React:    http://localhost:5173"
 	@echo "Docs:     http://localhost:8000/docs"
 	@echo ""
 	uv run uvicorn app.main:app --port 8000 > /tmp/backend.log 2>&1 &
-	@sleep 6
-	uv run streamlit run frontend/ui.py --server.port 8501 &
-	@echo "Both services started! Press Ctrl+C to stop."
+	@sleep 3
+	cd frontend-react && npm run dev &
+	@echo "Both services started. Run 'make kill' to stop."
 
 lint:
 	@echo "Running Ruff linter..."
-	uv run ruff check app/ frontend/
+	uv run ruff check app/
 
 lint-fix:
 	@echo "Auto-fixing with Ruff..."
-	uv run ruff check --fix app/ frontend/
+	uv run ruff check --fix app/
 
 test:
 	@echo "Running Python backend tests (no API keys needed)..."
@@ -97,7 +91,6 @@ logs:
 kill:
 	@echo "Killing processes..."
 	@pkill -f "uvicorn" 2>/dev/null || true
-	@pkill -f "streamlit" 2>/dev/null || true
 	@pkill -f "vite" 2>/dev/null || true
 	@echo "✅ Done"
 

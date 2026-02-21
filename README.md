@@ -13,7 +13,7 @@ This started as a weekend prototype to see how far a manual agent loop could get
 - **Langfuse Observability** — Full tracing of every LLM call with token usage and latency
 - **Persistent Sessions** — Resume research sessions from past runs
 - **Markdown Reports** — Professional legal research reports saved to disk
-- **Dual Frontends** — Streamlit (Python) or React (Vite + TypeScript)
+- **React Frontend** — Modern UI (Vite + TypeScript)
 
 ---
 
@@ -72,14 +72,9 @@ make backend
 # or: uv run uvicorn app.main:app --reload --port 8000
 ```
 
-**Terminal 2 — Frontend (choose one)**
+**Terminal 2 — Frontend**
 
 ```bash
-# Option A: Streamlit
-make frontend
-# UI: http://localhost:8501
-
-# Option B: React
 make react
 # UI: http://localhost:5173
 ```
@@ -132,41 +127,29 @@ python app/init_langfuse_prompts.py
 uvicorn app.main:app --reload --port 8000
 ```
 
-**Terminal 2 — Frontend (choose one)**
+**Terminal 2 — Frontend**
 
 ```bash
-# Streamlit
-streamlit run frontend/ui.py
-# UI: http://localhost:8501
-
-# Or React (requires Node.js)
 cd frontend-react && npm install && npm run dev
 # UI: http://localhost:5173
 ```
 
 *Note: The Makefile uses `uv run`; for a pip-only setup use the commands above (no `make` required).*
 
-### Local Docker (API + React, optional Streamlit)
+### Local Docker (API + React)
 
-Run the backend (API + React) in Docker:
+The backend image **includes** the React app (built at image build time). One container serves both.
 
 ```bash
 docker compose up --build backend
 ```
 
-- **Backend + React**: http://localhost:8000 (API and React UI)
+- **http://localhost:8000** — React UI and API (same as Railway)
 - Ensure `.env` contains `OPENAI_API_KEY` and `TAVILY_API_KEY`
 
-To also run the Streamlit UI in Docker (pointing at the backend):
+Optional: `docker compose up --build` also starts a separate React container on port 3000; both work. The backend alone is sufficient for local testing.
 
-```bash
-docker compose up --build
-```
-
-- **Backend + React**: http://localhost:8000  
-- **Streamlit**: http://localhost:8501 (uses `LEXAGENT_API_URL=http://backend:8000`)
-
-Sessions and reports persist when you mount volumes (default: `./data`, `./reports`). The same setup runs locally without Docker: `make backend` and `make frontend` (or `make dev`).
+Sessions and reports persist when you mount volumes (default: `./data`, `./reports`). Same setup without Docker: `make backend` and `make react` (or `make dev`).
 
 ---
 
@@ -207,8 +190,6 @@ lexagent/
 │   ├── storage.py            # JSON persistence: auditable, swappable for DB
 │   ├── tools.py              # Tavily search + report writer
 │   └── init_langfuse_prompts.py
-├── frontend/
-│   └── ui.py                 # Streamlit UI (optional in Docker)
 ├── frontend-react/            # React + Vite + TypeScript (served at / in Docker)
 ├── docs/                      # Project documentation
 ├── data/                      # Session JSON (runtime; use volume in production)
@@ -254,8 +235,8 @@ make clean         # Remove sessions and reports
 ### Linting
 
 ```bash
-uv run ruff check app/ frontend/
-uv run ruff check --fix app/ frontend/
+uv run ruff check app/
+uv run ruff check --fix app/
 ```
 
 ---
