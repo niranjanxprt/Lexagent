@@ -1,7 +1,7 @@
 import json
 import os
 
-from langfuse import get_client, observe
+from langfuse import get_client, observe, propagate_attributes
 from langfuse.openai import openai
 
 from app.context import get_api_keys
@@ -144,16 +144,12 @@ def call_llm(
         trace_name: Optional name for tracing
         langfuse_prompt: Optional Langfuse prompt object for linking to traces
     """
-    api_keys = get_api_keys()
-    openai_key = api_keys.get("openai") or os.environ.get("OPENAI_API_KEY")
-    # api_key passed per-request (not globally) to support X-OpenAI-API-Key header —
-    # lets frontend users supply their own OpenAI key without a shared server-side key.
+    # OpenAI client (including Langfuse wrapper) reads OPENAI_API_KEY from env.
+    # Per-request key from X-OpenAI-API-Key is applied in main._apply_api_key_headers.
     kwargs = {
         "model": os.environ.get("OPENAI_MODEL", "gpt-4o-mini"),
         "messages": messages,
     }
-    if openai_key:
-        kwargs["api_key"] = openai_key
     if use_json:
         kwargs["response_format"] = {"type": "json_object"}
 
@@ -174,14 +170,14 @@ def generate_plan(goal: str, session_id: str) -> list[Task]:
     """
     Decompose the legal research goal into 3–6 research tasks.
     Fetches prompt from Langfuse, falls back to inline copy if unavailable.
-    session_id is used for Langfuse trace correlation.
+    session_id is used for Langfuse trace correlation (via propagate_attributes).
     """
-    langfuse.trace(session_id=session_id)
-    prompt = get_prompt_safe("legal-research/generate-plan", type="chat")
-    messages = prompt.compile(goal=goal)
-    raw = call_llm(messages, use_json=True, trace_name="generate-plan", langfuse_prompt=prompt)
-    data = json.loads(raw)
-    return [Task(**t) for t in data["tasks"]]
+    with propagate_attributes(session_id=session_id):
+        prompt = get_prompt_safe("legal-research/generate-plan", type="chat")
+        messages = prompt.compile(goal=goal)
+        raw = call_llm(messages, use_json=True, trace_name="generate-plan", langfuse_prompt=prompt)
+        data = json.loads(raw)
+        return [Task(**t) for t in data["tasks"]]
 
 
 # ---------------------------------------------------------------------------
