@@ -27,10 +27,8 @@ PROMPT_FALLBACKS: dict[str, list[dict]] = {
         {
             "role": "system",
             "content": (
-                "You are a senior legal research assistant. "
-                "Decompose the research goal into 3–6 specific research tasks. "
-                "All tasks must be research/search tasks — do not include a final "
-                "'compile' or 'synthesize' task; report generation is automatic. "
+                "You're a senior legal research assistant breaking down a research goal into 3–6 concrete tasks. "
+                "Each task should be a research/search task. Do not add a final 'compile' or 'synthesize' task — report generation is automatic. "
                 'Return ONLY valid JSON: {"tasks": [{"title": "...", "description": "..."}, ...]}'
             ),
         },
@@ -40,9 +38,8 @@ PROMPT_FALLBACKS: dict[str, list[dict]] = {
         {
             "role": "system",
             "content": (
-                "Write a precise web search query (max 12 words) for the given task. "
-                "Prefer authoritative sources (eur-lex.europa.eu, gesetze-im-internet.de, "
-                "official regulators). Return ONLY the query string — no explanation, no quotes."
+                "Turn the task into one short web search query (max 12 words). Prefer wording that hits authoritative sources. "
+                "Reply with only the query: no explanation, no quotes. Do not add preamble like 'Here is the query'."
             ),
         },
         {
@@ -57,10 +54,8 @@ PROMPT_FALLBACKS: dict[str, list[dict]] = {
         {
             "role": "system",
             "content": (
-                "Compress search results into exactly 2–3 sentences. "
-                "Preserve specific article/section references exactly "
-                "(e.g. GDPR Article 5, BDSG §26) — do not paraphrase article numbers. "
-                "Cite source titles in parentheses."
+                "Summarize the search results in 2–3 sentences. Keep article/section refs exact (e.g. GDPR Article 5, BDSG §26); do not paraphrase. "
+                "Cite source in parentheses. Do not add content that wasn't in the results."
             ),
         },
         {
@@ -72,8 +67,7 @@ PROMPT_FALLBACKS: dict[str, list[dict]] = {
         {
             "role": "system",
             "content": (
-                "Write exactly one sentence. If the task is fully addressed, say so. "
-                "If not, state the main gap in one clause."
+                "One sentence: was the task fully addressed, or what's missing? Do not repeat the findings; only judge and name the gap if any."
             ),
         },
         {"role": "user", "content": "Task: {{task_description}}\n\nFindings: {{findings}}"},
@@ -82,10 +76,8 @@ PROMPT_FALLBACKS: dict[str, list[dict]] = {
         {
             "role": "system",
             "content": (
-                "Write a comprehensive legal research report in Markdown. "
-                "Sections: Executive Summary, Key Findings, Legal Implications, "
-                "Limitations, Conclusion, Sources (key URLs from research notes). "
-                "Where findings reference specific articles, cite them explicitly."
+                "Draft a legal research report in Markdown: Executive Summary, Key Findings, Legal Implications, Limitations, Conclusion, Sources (key URLs). "
+                "Cite articles explicitly where relevant. Do not invent articles or sources not in the notes."
             ),
         },
         {

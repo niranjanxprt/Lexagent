@@ -7,7 +7,7 @@ LexAgent is deployed as a single container: the Dockerfile builds the React fron
 ### How the Docker build works
 
 - **Stage 1 (frontend):** Node builds `frontend-react` with `npm run build:docker`; output is copied to `./static`.
-- **Stage 2 (runtime):** Python 3.11 image; `app/`, `frontend/`, `static/`, and `start.sh` are copied. `start.sh` runs `uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}`.
+- **Stage 2 (runtime):** Python 3.11 image; `app/`, `frontend/`, `scripts/`, and `static/` are copied. `scripts/start.sh` runs `uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}`.
 
 Served paths:
 
@@ -89,6 +89,8 @@ make react     # React dev server http://localhost:5173
 ```
 
 Or `make dev` to start backend and Streamlit in the background (see Makefile).
+
+**Local testing URLs:** With the backend running, use **http://localhost:8000/health** (`{"status":"ok"}`), **http://localhost:8000/docs** (Swagger), **http://localhost:8000/sessions** (list sessions). With Streamlit: **http://localhost:8501**. With React dev: **http://localhost:5173**. Smoke test: `curl http://localhost:8000/health`.
 
 ---
 

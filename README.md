@@ -274,10 +274,9 @@ Every session produces a trace in Langfuse: per-task sub-spans, token usage, lat
 | [docs/LANGFUSE_SETUP.md](docs/LANGFUSE_SETUP.md) | Langfuse prompt management |
 | [docs/SECURITY.md](docs/SECURITY.md) | Security guardrails |
 | [docs/BEST_PRACTICES.md](docs/BEST_PRACTICES.md) | Development best practices |
-| [docs/UPDATES.md](docs/UPDATES.md) | Recent improvements |
 | [transcript.md](transcript.md) | Example session transcript |
-| [docs/LOCALHOST_TEST_LINKS.md](docs/LOCALHOST_TEST_LINKS.md) | Localhost URLs for testing |
 | [docs/REMAINING_TASKS.md](docs/REMAINING_TASKS.md) | What’s done vs remaining (Langfuse, Railway, manual checks) |
+| [docs/CLI_LANGFUSE_RAILWAY.md](docs/CLI_LANGFUSE_RAILWAY.md) | Update Langfuse prompts and Railway (volumes/vars) via CLI |
 | [frontend-react/README.md](frontend-react/README.md) | React frontend details |
 
 ---

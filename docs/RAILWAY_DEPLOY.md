@@ -14,7 +14,7 @@ The project uses a **Dockerfile** that:
 
 - Builds the React frontend and copies it into the image as `/app/static`
 - Installs Python dependencies from `requirements.txt`
-- Runs `start.sh`, which starts: `uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}`
+- Runs `scripts/start.sh`, which starts: `uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}`
 
 `railway.toml` in the repo:
 
@@ -24,7 +24,7 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "bash start.sh"
+startCommand = "bash scripts/start.sh"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
@@ -109,13 +109,12 @@ To connect: Railway Dashboard → Project → New → GitHub Repo → select you
 
 ## Persistent storage (volumes)
 
-The app writes sessions to `/app/data` and reports to `/app/reports`. Without a volume, these are ephemeral and reset on redeploy.
+The app writes sessions to **`/app/data`** and reports to **`/app/reports`** (see `app/storage.py` and `app/tools.py`). Without a volume at `/app/data`, sessions are ephemeral and reset on redeploy.
 
-To persist sessions (and optionally reports):
+To persist sessions:
 
-1. Railway Dashboard → your service → **Volumes**
-2. Add a volume with **Mount Path** `/app/data`
-3. Optionally add a second volume for **Mount Path** `/app/reports`
+- **CLI:** `railway volume add --mount-path /app/data` (from a linked project). If you already have a volume at another path (e.g. `/app/persist`), add a separate volume at `/app/data` so the app can persist sessions.
+- **Dashboard:** Railway Dashboard → your service → Volumes → Add volume → **Mount Path** `/app/data`. Optionally add **`/app/reports`** for report files.
 
 The app creates these directories on startup when the mount is writable.
 

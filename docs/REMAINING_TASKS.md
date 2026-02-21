@@ -7,30 +7,39 @@ Summary of what is **done** in the repo vs what is **left for you** (manual or e
 ## Done (in this repo)
 
 - **Code:** `validate_search_results()` wired in; Langfuse fallback (`get_prompt_safe`); context length guards; `session_id` in `generate_plan()`; strategic comments; crash-recovery comment in `main.py`; `validate_all_variables` docstring.
-- **Docker:** `frontend/` in image; `streamlit` service in docker-compose.
-- **Docs:** README (background, failure modes, evaluation strategy, AI assistants, trade-offs, limitations, **Option A UV + Option B venv+pip**); DEPLOYMENT.md; EVALUATION.md; RAILWAY_DEPLOY; TESTING; BEST_PRACTICES; LOCALHOST_TEST_LINKS; transcript (4-task plan, footnote, imperfect reflection).
+- **Docker:** `frontend/` and `scripts/` in image; `scripts/start.sh` for start; `streamlit` service in docker-compose.
+- **Langfuse:** Block D prompts pushed via `app/init_langfuse_prompts.py` (run completed); new versions have production label.
+- **Docs:** README (Option A UV + Option B venv+pip, etc.); DEPLOYMENT.md; EVALUATION.md; RAILWAY_DEPLOY; TESTING; BEST_PRACTICES; LOCALHOST_TEST_LINKS; CLI_LANGFUSE_RAILWAY; REMAINING_TASKS; transcript (4-task plan, footnote, imperfect reflection). Redundant docs removed (TEST_AND_DOCKER_EXECUTION_REPORT, RAILWAY_* extras, REACT_FRONTEND_SUMMARY).
+- **Scripts:** All under `scripts/` (start.sh, update_langfuse_prompts_cli.sh, railway_setup_volume_and_vars.sh, prompts/*.json). Railway and Docker use `bash scripts/start.sh`.
 - **Tests:** `make test`, `make lint`, `make react-test` passing; Docker build succeeds.
-- **Git:** All of the above committed (multiple commits on `main`).
 
 ---
 
 ## Remaining (for you to do)
 
-### 1. Langfuse UI (Block D) — in Langfuse dashboard only
+### 1. Langfuse (Block D) — CLI or dashboard
 
-- **generate-plan:** Add to system message: *"All tasks must be research/search tasks. Do not include a final 'compile', 'synthesize', or 'write report' task — report generation is automatic."*
-- **refine-query:** Add: return only the query string; prefer authoritative sources (eur-lex, gesetze-im-internet, regulators).
-- **compress-results:** Add: preserve article/section references exactly (e.g. GDPR Art 5, BDSG §26).
-- **reflect:** Add: one sentence; if fully addressed say so; if not, state the main gap.
-- **generate-report:** Add: end with Sources section (key URLs); cite articles explicitly.
-- Apply the **production** label to the version you want the app to use.
-- Ensure each prompt has at least two versions if you want to demonstrate versioning.
+**Option A — CLI (recommended):** From repo root, run:
+```bash
+bash scripts/update_langfuse_prompts_cli.sh
+```
+Requires `.env` with `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY`. Creates new versions with Block D text. Then in the Langfuse dashboard, apply the **production** label to the new versions.
 
-### 2. Railway (A7) — in Railway dashboard
+**Option B — Dashboard:** Edit the 5 prompts in the Langfuse UI and add the same text; apply **production** label.
 
-- Add a **volume** with mount path **`/app/data`** so sessions persist across redeploys.
-- Optionally set **`OPENAI_MODEL=gpt-4o`** for stronger legal reasoning.
-- Optionally add a volume for **`/app/reports`** if you want report files to persist.
+Block D content: **generate-plan** — no final compile/synthesize task; **refine-query** — query only, authoritative sources; **compress-results** — preserve article refs (e.g. GDPR Art 5, BDSG §26); **reflect** — one sentence, state gap if not addressed; **generate-report** — Sources section, cite articles explicitly.
+
+See [docs/CLI_LANGFUSE_RAILWAY.md](CLI_LANGFUSE_RAILWAY.md) for full CLI usage.
+
+### 2. Railway (A7) — CLI or dashboard
+
+**Option A — CLI:** From repo root (with `railway login` and project linked):
+```bash
+bash scripts/railway_setup_volume_and_vars.sh
+```
+Or manually: `railway volume add --mount-path /app/data`. Optionally: `railway variables --set OPENAI_MODEL=gpt-4o`.
+
+**Option B — Dashboard:** Add a volume at **`/app/data`**; optionally **`/app/reports`** and **OPENAI_MODEL=gpt-4o**.
 
 ### 3. Manual / local verification
 
@@ -45,8 +54,8 @@ Summary of what is **done** in the repo vs what is **left for you** (manual or e
 
 | Area        | Where        | Action |
 |------------|--------------|--------|
-| Prompts    | Langfuse UI  | Edit 5 prompts, add text above, set `production` label |
-| Persistence| Railway      | Volume at `/app/data` (and optionally `/app/reports`) |
-| Model      | Railway vars | Optional: `OPENAI_MODEL=gpt-4o` |
+| Prompts    | CLI or UI    | `bash scripts/update_langfuse_prompts_cli.sh` then set `production` label in UI |
+| Persistence| CLI or UI    | `railway volume add -m /app/data` or Railway dashboard |
+| Model      | Railway vars | `railway variables --set OPENAI_MODEL=gpt-4o` (optional) |
 | Smoke test | Local/Docker | Health, /docs, full session with API keys |
 | Publish    | Git          | `git push origin main` after review |

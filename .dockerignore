@@ -22,6 +22,5 @@ reports
 !README.md
 .streamlit
 .langfuse
-scripts/
 docs/
 .python-version
