@@ -1,10 +1,14 @@
-import json
+import logging
 import os
+from typing import TypeVar
 
 from langfuse import get_client, observe, propagate_attributes
 from langfuse.openai import openai
+from pydantic import BaseModel, ValidationError
 
-from app.models import AgentState, Task
+from app.models import AgentState, ReflectResult, ResearchPlan, Task
+
+logger = logging.getLogger(__name__)
 from app.security import (
     validate_search_results,
 )
@@ -68,7 +72,10 @@ PROMPT_FALLBACKS: dict[str, list[dict]] = {
         {
             "role": "system",
             "content": (
-                "One sentence: was the task fully addressed, or what's missing? Do not repeat the findings; only judge and name the gap if any."
+                "Check whether the findings fully answer the task. Return ONLY valid JSON, no markdown or prose. "
+                'Schema: {"status":"fully_addressed"|"partially_addressed"|"not_addressed","gap":"..."} '
+                'Use "fully_addressed" only when the core legal question is answered with source-backed support. '
+                'Otherwise set "gap" to the single most important missing element (max 20 words). Set "gap" to "" when fully_addressed.'
             ),
         },
         {"role": "user", "content": "Task: {{task_description}}\n\nFindings: {{findings}}"},
@@ -121,9 +128,21 @@ def get_prompt_safe(name: str, prompt_type: str = "chat"):
     except Exception:
         return FallbackPrompt(PROMPT_FALLBACKS[name])
 
+
+def _full_model() -> str:
+    """
+    Full (non-mini) model for high-stakes steps: generate-plan and generate-report.
+    Derived from OPENAI_MODEL; no extra env vars. Examples: gpt-4.1-mini -> gpt-4.1.
+    """
+    base = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
+    return base.replace("-mini", "").replace("-nano", "").strip() or base
+
+
 # ---------------------------------------------------------------------------
 # LLM wrapper
 # ---------------------------------------------------------------------------
+
+T = TypeVar("T", bound=BaseModel)
 
 
 @observe(name="call-llm", as_type="generation")
@@ -132,35 +151,58 @@ def call_llm(
     use_json: bool = False,
     trace_name: str | None = None,
     langfuse_prompt=None,
+    model: str | None = None,
 ) -> str:
     """
     Wrapper around OpenAI chat completions.
-    Langfuse @observe() automatically captures:
-      - input messages
-      - output content
-      - token usage
-      - latency
-
-    Args:
-        messages: List of message dicts for the LLM
-        use_json: Whether to request JSON output format
-        trace_name: Optional name for tracing
-        langfuse_prompt: Optional Langfuse prompt object for linking to traces
+    Langfuse @observe() automatically captures input, output, token usage, latency.
+    model: overrides OPENAI_MODEL when set (e.g. _full_model() for plan/report).
     """
-    # OpenAI client (including Langfuse wrapper) reads OPENAI_API_KEY from env.
-    # Per-request key from X-OpenAI-API-Key is applied in main._apply_api_key_headers.
     kwargs = {
-        "model": os.environ.get("OPENAI_MODEL", "gpt-4o-mini"),
+        "model": model or os.environ.get("OPENAI_MODEL", "gpt-4o-mini"),
         "messages": messages,
     }
     if use_json:
         kwargs["response_format"] = {"type": "json_object"}
-
     if langfuse_prompt:
         kwargs["langfuse_prompt"] = langfuse_prompt
-
     response = openai.chat.completions.create(**kwargs)
     return response.choices[0].message.content
+
+
+def call_llm_validated(
+    messages: list,
+    model_class: type[T],
+    call_kwargs: dict | None = None,
+    max_retries: int = 1,
+) -> T:
+    """
+    Call LLM, parse JSON, validate with Pydantic. Retry once with correction on parse/validation failure.
+    Use for ResearchPlan and ReflectResult.
+    """
+    call_kwargs = call_kwargs or {}
+    for attempt in range(max_retries + 1):
+        raw = call_llm(messages, **call_kwargs)
+        try:
+            return model_class.model_validate_json(raw)
+        except (ValueError, ValidationError) as e:
+            if attempt < max_retries:
+                messages = messages + [
+                    {"role": "assistant", "content": raw},
+                    {
+                        "role": "user",
+                        "content": (
+                            f"Your output failed validation: {e}. "
+                            f"Return ONLY valid JSON matching this schema: "
+                            f"{model_class.model_json_schema()}. No other text."
+                        ),
+                    },
+                ]
+            else:
+                raise ValueError(
+                    f"{model_class.__name__} validation failed after {max_retries + 1} attempts. "
+                    f"Last raw output: {raw[:200]}"
+                ) from e
 
 
 # ---------------------------------------------------------------------------
@@ -172,15 +214,17 @@ def call_llm(
 def generate_plan(goal: str, session_id: str) -> list[Task]:
     """
     Decompose the legal research goal into 3–6 research tasks.
-    Fetches prompt from Langfuse, falls back to inline copy if unavailable.
-    session_id is used for Langfuse trace correlation (via propagate_attributes).
+    Uses full model (non-mini) for plan quality; validated via ResearchPlan.
     """
     with propagate_attributes(session_id=session_id):
         prompt = get_prompt_safe("legal-research/generate-plan", prompt_type="chat")
         messages = prompt.compile(goal=goal)
-        raw = call_llm(messages, use_json=True, trace_name="generate-plan", langfuse_prompt=prompt)
-        data = json.loads(raw)
-        return [Task(**t) for t in data["tasks"]]
+        plan = call_llm_validated(
+            messages,
+            ResearchPlan,
+            {"use_json": True, "trace_name": "generate-plan", "langfuse_prompt": prompt, "model": _full_model()},
+        )
+        return [Task(title=t.title, description=t.description) for t in plan.tasks]
 
 
 # ---------------------------------------------------------------------------
@@ -249,22 +293,28 @@ def execute_task(task: Task, state: AgentState) -> Task:
         langfuse_prompt=compress_prompt,
     )
 
-    # Step 4 — Reflect: did this task answer its goal?
+    # Step 4 — Reflect: validated JSON (status + gap)
     reflect_prompt = get_prompt_safe("legal-research/reflect", prompt_type="chat")
     reflection_messages = reflect_prompt.compile(
         task_description=task_description_safe,
         findings=compressed_summary,
     )
-    reflection = call_llm(
+    reflect_result = call_llm_validated(
         reflection_messages,
-        trace_name="reflect",
-        langfuse_prompt=reflect_prompt,
+        ReflectResult,
+        {"use_json": True, "trace_name": "reflect", "langfuse_prompt": reflect_prompt},
     )
+    task.reflection = reflect_result.gap.strip() or "Fully addressed."
+    task.reflect_status = reflect_result.status
+    if reflect_result.status != "fully_addressed":
+        logger.warning(
+            "task_incomplete",
+            extra={"task": task.title, "status": reflect_result.status, "gap": reflect_result.gap},
+        )
 
     # Step 5 — Update task object
     task.result = compressed_summary
     task.sources = sources
-    task.reflection = reflection
     task.status = "done"
 
     # Step 6 — Append ONLY compressed summary to state context (not raw results)
@@ -301,6 +351,7 @@ def generate_final_report(state: AgentState) -> str:
         messages,
         trace_name="final-report",
         langfuse_prompt=report_prompt,
+        model=_full_model(),
     )
     path = save_report(state.session_id, state.goal, report_content)
     return path

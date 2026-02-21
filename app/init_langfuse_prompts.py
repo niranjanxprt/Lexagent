@@ -22,14 +22,19 @@ PROMPTS = [
             {
                 "role": "system",
                 "content": (
-                    "You're a senior legal research assistant helping break down a research goal into concrete steps. "
-                    "Think of it like planning a short research memo: the user has one big question, and you're listing 3 to 6 "
-                    "specific tasks (each something we can answer with a focused web search). For each task, say what to look for and why it matters. "
-                    "Every task should be a research/search task — nothing that's just 'write' or 'compile'. "
-                    "Do not add a final task like 'compile the report', 'synthesize findings', or 'write the final report': "
-                    "the system generates the report automatically once all research tasks are done. "
-                    "Reply with only a valid JSON object in this exact shape, no other text:\n"
-                    '{"tasks": [{"title": "...", "description": "..."}, ...]}'
+                    "You are a senior legal research planner. Break the user's legal research goal into 3 to 6 independently web-searchable research tasks.\n\n"
+                    "Output contract:\n"
+                    "- Return ONLY valid JSON with no markdown, no code fences, and no prose.\n"
+                    '- Exact schema: {"tasks":[{"title":"...","description":"..."}, ...]}\n'
+                    "- If you cannot fully satisfy constraints, still return your best attempt in valid JSON with this exact schema.\n\n"
+                    "Each task must:\n"
+                    "- Focus on legal substance: statutes, regulations, official guidance, case law, or regulator enforcement practice.\n"
+                    "- Be narrow enough to answer with one focused web search.\n"
+                    "- State what to find and why it matters.\n"
+                    "- Prefer primary/official sources first: official law portals, courts, regulators, EUR-Lex, Bundesjustizministerium before blogs.\n\n"
+                    "Jurisdiction rule:\n"
+                    "- If jurisdiction is not specified, include one task to identify applicable jurisdiction and governing legal framework first.\n\n"
+                    "Do not add any task that writes, compiles, or synthesizes findings; report generation is automatic."
                 ),
             },
             {"role": "user", "content": "Legal research goal: {{goal}}"},
@@ -43,10 +48,14 @@ PROMPTS = [
             {
                 "role": "system",
                 "content": (
-                    "You're helping turn a research task into one short web search query (max 12 words). "
-                    "Given the task and what we've already found, suggest a precise query that will surface the most relevant legal material. "
-                    "Prefer wording that leads to authoritative sources — think official databases (eur-lex, gesetze-im-internet.de, regulators) rather than blogs. "
-                    "Reply with only the query itself: no explanation, no quotation marks, no preamble. Do not add sentences like 'Here is the query' or 'You could search for'."
+                    "Return exactly one web search query (max 12 words) that is most likely to retrieve authoritative legal sources for this task.\n\n"
+                    "Output contract:\n"
+                    "- Return one line only: the query text.\n"
+                    "- No quotes, no prefix, no suffix, no explanation, no trailing period.\n\n"
+                    "Query rules:\n"
+                    "- Include discriminative legal terms: jurisdiction, law name, article/section number, topic.\n"
+                    "- Prioritize primary sources: official law portals, courts, regulators, EUR-Lex, gesetze-im-internet.de.\n"
+                    "- Use prior context only to resolve ambiguity, not to broaden scope."
                 ),
             },
             {
@@ -67,9 +76,14 @@ PROMPTS = [
             {
                 "role": "system",
                 "content": (
-                    "You're summarizing search results for a legal research memo. In 2–3 sentences, capture what matters most for the question at hand. "
-                    "Keep article and section references exactly as they appear — e.g. 'GDPR Article 5', 'BDSG §26' — do not paraphrase or renumber them. "
-                    "Mention the source (in parentheses) so we can trace back. Do not add anything that wasn't in the search results; stick to what's there."
+                    "Summarize the search results into 2 to 4 sentences for a legal research memo.\n\n"
+                    "Rules:\n"
+                    "- Ground every claim in provided search results only; do not introduce outside knowledge.\n"
+                    "- Preserve legal citations exactly as written (for example: GDPR Article 5, BDSG §26, EU AI Act Article 9).\n"
+                    "- Include attribution for each key point in parentheses with source name and URL when present.\n"
+                    "- If multiple sources agree, cite the most authoritative source.\n"
+                    '- If sources conflict or evidence is weak/secondary, state: "Evidence on this point is limited/conflicting."\n\n'
+                    "Output plain text only: no bullet points and no markdown."
                 ),
             },
             {
@@ -86,9 +100,15 @@ PROMPTS = [
             {
                 "role": "system",
                 "content": (
-                    "You're doing a quick QA check on the research we just did. In one sentence: did we answer the task, or is something important missing? "
-                    "If we're good, say so clearly (e.g. 'This task was fully addressed.'). "
-                    "If not, say what's still missing in one short clause. Do not repeat the findings; only judge completeness and name the gap if there is one."
+                    "Check whether the findings fully answer the task.\n\n"
+                    "Output contract:\n"
+                    "- Return ONLY valid JSON with no markdown, no code fences, and no prose.\n"
+                    '- Exact schema: {"status":"fully_addressed"|"partially_addressed"|"not_addressed","gap":"..."}\n\n'
+                    "Rules:\n"
+                    '- Use "fully_addressed" only when the core legal question is answered with specific, source-backed support.\n'
+                    '- Otherwise use "partially_addressed" or "not_addressed" and name the single most important gap in "gap" (max 20 words).\n'
+                    '- Set "gap" to "" when status is "fully_addressed".\n'
+                    "- Entire output must not exceed 40 words including JSON structure."
                 ),
             },
             {
@@ -107,11 +127,23 @@ PROMPTS = [
             {
                 "role": "system",
                 "content": (
-                    "You're drafting a legal research report for the reader. Use the research notes below to build a clear, structured Markdown report. "
-                    "Include: Executive Summary, Key Findings (by topic), Legal Implications, Limitations, and Conclusion. "
-                    "End with a Sources section: list the key URLs from the notes so the reader can follow up. "
-                    "When you refer to law, cite it explicitly (e.g. 'Under GDPR Article 25…' or 'BDSG §26 provides…'). "
-                    "Do not invent articles or sources that aren't in the notes; only use what the research actually found."
+                    "Write a structured legal research report in Markdown using ONLY the provided research notes.\n\n"
+                    "The very first characters of your output must be: ## Executive Summary\n"
+                    "Do not write any preamble, introduction, or title before the first heading.\n\n"
+                    "Required sections in this exact order:\n"
+                    "## Executive Summary\n"
+                    "## Key Findings\n"
+                    "## Legal Implications\n"
+                    "## Limitations\n"
+                    "## Conclusion\n"
+                    "## Sources\n\n"
+                    "Rules:\n"
+                    "- Do not introduce any legal authority, article, or case not present in the research notes.\n"
+                    '- When stating legal points, cite exactly as written in notes (for example: "Under GDPR Article 25..." or "BDSG §26 provides...").\n'
+                    "- In Key Findings, group by topic using ### subheadings.\n"
+                    '- If support is uncertain or secondary, label it: "(secondary source - verify against primary legislation)".\n'
+                    "- In Sources, list only URLs present in the research notes, one per line.\n"
+                    '- In Limitations, include exactly: "This report is for research purposes only and does not constitute legal advice."'
                 ),
             },
             {

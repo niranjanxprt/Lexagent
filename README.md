@@ -170,6 +170,25 @@ Sessions and reports persist when you mount volumes (default: `./data`, `./repor
 
 ---
 
+## Why This Uses 5 Prompts
+
+The system uses five focused prompts instead of one large prompt to keep each step narrow, testable, and safer against hallucinations.
+
+1. **`generate-plan`** — Converts one broad goal into concrete research tasks.
+2. **`refine-query`** — Turns each task into a precise search query that favors authoritative sources.
+3. **`compress-results`** — Reduces raw search output into grounded summaries before adding context.
+4. **`reflect`** — Performs a completeness check so weak findings are identified early.
+5. **`generate-report`** — Synthesizes all validated notes into the final report.
+
+Why this split matters:
+- **Separation of concerns:** each prompt has one job, which improves consistency.
+- **Lower hallucination risk:** the compression step only sees raw search snippets; the reflection step audits completeness.
+- **Smaller context footprint:** only compressed notes flow forward, not raw search payloads.
+- **Better prompt management:** each prompt can be versioned, rolled back, and A/B tested independently in Langfuse.
+- **Clearer evaluations:** you can score failures by stage (planning, retrieval query quality, compression fidelity, reflection quality, report synthesis).
+
+---
+
 ### Failure modes and resilience
 
 - **Thin Tavily results:** The reflect step evaluates whether the task was adequately answered; gaps are recorded in `context_notes` and influence later queries.
@@ -244,6 +263,8 @@ uv run ruff check --fix app/
 ## Observability and prompt management
 
 Every session produces a trace in Langfuse: per-task sub-spans, token usage, latency, and the prompt version used for each generation. **Prompt workflow:** edit in Langfuse UI → save → apply `production` label; the running app picks up changes within the SDK cache TTL (~60s). **Fallback:** if Langfuse is unreachable, the agent uses inline prompt copies in `app/agent.py` so it never fails solely due to observability.
+
+**Model usage (single env var `OPENAI_MODEL`):** Plan and report use the full model (e.g. `gpt-4o` when `OPENAI_MODEL=gpt-4o-mini`). Refine-query, compress-results, and reflect use the default model (typically mini). No extra env vars; see `_full_model()` in `app/agent.py`.
 
 ## Documentation
 
