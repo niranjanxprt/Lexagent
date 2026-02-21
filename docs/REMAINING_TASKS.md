@@ -37,9 +37,9 @@ See [docs/CLI_LANGFUSE_RAILWAY.md](CLI_LANGFUSE_RAILWAY.md) for full CLI usage.
 ```bash
 bash scripts/railway_setup_volume_and_vars.sh
 ```
-Or manually: `railway volume add --mount-path /app/data`. Optionally: `railway variables --set OPENAI_MODEL=gpt-4o`.
+Or manually: `railway volume add --mount-path /app/data`. Optionally: `railway variables --set OPENAI_MODEL=gpt-4.1-mini`.
 
-**Option B — Dashboard:** Add a volume at **`/app/data`**; optionally **`/app/reports`** and **OPENAI_MODEL=gpt-4o**.
+**Option B — Dashboard:** Add a volume at **`/app/data`**; optionally **`/app/reports`** and **OPENAI_MODEL=gpt-4.1-mini**.
 
 ### 3. Manual / local verification
 
@@ -56,6 +56,6 @@ Or manually: `railway volume add --mount-path /app/data`. Optionally: `railway v
 |------------|--------------|--------|
 | Prompts    | CLI or UI    | `bash scripts/update_langfuse_prompts_cli.sh` then set `production` label in UI |
 | Persistence| CLI or UI    | `railway volume add -m /app/data` or Railway dashboard |
-| Model      | Railway vars | `railway variables --set OPENAI_MODEL=gpt-4o` (optional) |
+| Model      | Railway vars | `railway variables --set OPENAI_MODEL=gpt-4.1-mini` (optional) |
 | Smoke test | Local/Docker | Health, /docs, full session with API keys |
 | Publish    | Git          | `git push origin main` after review |

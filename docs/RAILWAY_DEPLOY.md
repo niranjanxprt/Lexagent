@@ -62,7 +62,7 @@ railway variables --set "LANGFUSE_BASE_URL=https://cloud.langfuse.com"
 Optional (model):
 
 ```bash
-railway variables --set "OPENAI_MODEL=gpt-4o-mini"
+railway variables --set "OPENAI_MODEL=gpt-4.1-mini"
 ```
 
 ### 3. Deploy

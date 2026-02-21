@@ -10,8 +10,8 @@ echo "Railway: adding volume at /app/data (sessions persistence)..."
 railway volume add --mount-path /app/data
 
 echo ""
-echo "Optional: set OPENAI_MODEL to gpt-4o for stronger legal reasoning:"
-echo "  railway variables --set OPENAI_MODEL=gpt-4o"
+echo "Optional: OPENAI_MODEL (default gpt-4.1-mini; plan/report use gpt-4.1):"
+echo "  railway variables --set OPENAI_MODEL=gpt-4.1-mini"
 echo ""
 echo "Optional: add volume for reports:"
 echo "  railway volume add --mount-path /app/reports"

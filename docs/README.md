@@ -17,6 +17,7 @@ This folder contains project documentation for LexAgent, a legal research AI age
 | [SECURITY.md](SECURITY.md) | Security guardrails |
 | [BEST_PRACTICES.md](BEST_PRACTICES.md) | Development best practices |
 | [REMAINING_TASKS.md](REMAINING_TASKS.md) | What's done vs remaining |
+| [LEGAL_RESEARCH_PROMPTS_V4.md](LEGAL_RESEARCH_PROMPTS_V4.md) | All 5 legal-research prompts (V4) in one file |
 
 ## Quick Links
 

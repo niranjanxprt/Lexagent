@@ -54,7 +54,7 @@ TAVILY_API_KEY=tvly-...
 LANGFUSE_SECRET_KEY=sk-lf-...   # Optional
 LANGFUSE_PUBLIC_KEY=pk-lf-...  # Optional
 LEXAGENT_API_URL=http://localhost:8000
-OPENAI_MODEL=gpt-4o-mini
+OPENAI_MODEL=gpt-4.1-mini
 ```
 
 #### 3. Initialize Langfuse prompts (if using Langfuse)
@@ -264,7 +264,7 @@ uv run ruff check --fix app/
 
 Every session produces a trace in Langfuse: per-task sub-spans, token usage, latency, and the prompt version used for each generation. **Prompt workflow:** edit in Langfuse UI → save → apply `production` label; the running app picks up changes within the SDK cache TTL (~60s). **Fallback:** if Langfuse is unreachable, the agent uses inline prompt copies in `app/agent.py` so it never fails solely due to observability.
 
-**Model usage (single env var `OPENAI_MODEL`):** Plan and report use the full model (e.g. `gpt-4o` when `OPENAI_MODEL=gpt-4o-mini`). Refine-query, compress-results, and reflect use the default model (typically mini). No extra env vars; see `_full_model()` in `app/agent.py`.
+**Model usage (single env var `OPENAI_MODEL`):** Full model **gpt-4.1** for generate-plan and generate-report; default **gpt-4.1-mini** for refine-query, compress-results, and reflect. Set `OPENAI_MODEL=gpt-4.1-mini` (or omit) for this split; see `_full_model()` in `app/agent.py`.
 
 ## Documentation
 
@@ -274,6 +274,7 @@ Every session produces a trace in Langfuse: per-task sub-spans, token usage, lat
 | [docs/EVALUATION.md](docs/EVALUATION.md) | Evaluation design and per-scenario criteria |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deployment (Railway, Docker, local) |
 | [docs/LANGFUSE_SETUP.md](docs/LANGFUSE_SETUP.md) | Langfuse prompt management |
+| [docs/LEGAL_RESEARCH_PROMPTS_V4.md](docs/LEGAL_RESEARCH_PROMPTS_V4.md) | All 5 legal-research prompts (V4) in one file |
 | [docs/SECURITY.md](docs/SECURITY.md) | Security guardrails |
 | [docs/BEST_PRACTICES.md](docs/BEST_PRACTICES.md) | Development best practices |
 | [transcript.md](transcript.md) | Example session transcript |

@@ -66,7 +66,7 @@ railway volume add --mount-path /app/data
 railway volume add --mount-path /app/reports
 
 # Optional: use gpt-4o for legal reasoning
-railway variables --set OPENAI_MODEL=gpt-4o
+railway variables --set OPENAI_MODEL=gpt-4.1-mini
 
 # List volumes and variables
 railway volume list
@@ -91,6 +91,6 @@ railway volume add -m /app/data -s <SERVICE_ID>
 |------|---------|
 | Update all Langfuse prompts (Block D) | `bash scripts/update_langfuse_prompts_cli.sh` |
 | Add Railway volume `/app/data` | `railway volume add --mount-path /app/data` |
-| Set Railway model | `railway variables --set OPENAI_MODEL=gpt-4o` |
+| Set Railway model | `railway variables --set OPENAI_MODEL=gpt-4.1-mini` |
 | List Langfuse prompts | `npx langfuse-cli --env .env api prompts list` |
 | List Railway volumes | `railway volume list` |

@@ -134,7 +134,7 @@ def _full_model() -> str:
     Full (non-mini) model for high-stakes steps: generate-plan and generate-report.
     Derived from OPENAI_MODEL; no extra env vars. Examples: gpt-4.1-mini -> gpt-4.1.
     """
-    base = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
+    base = os.environ.get("OPENAI_MODEL", "gpt-4.1-mini")
     return base.replace("-mini", "").replace("-nano", "").strip() or base
 
 
@@ -159,7 +159,7 @@ def call_llm(
     model: overrides OPENAI_MODEL when set (e.g. _full_model() for plan/report).
     """
     kwargs = {
-        "model": model or os.environ.get("OPENAI_MODEL", "gpt-4o-mini"),
+        "model": model or os.environ.get("OPENAI_MODEL", "gpt-4.1-mini"),
         "messages": messages,
     }
     if use_json:

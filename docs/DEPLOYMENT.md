@@ -24,7 +24,7 @@ Served paths:
 | `LANGFUSE_SECRET_KEY` | Recommended | Agent falls back to inline prompts if missing/unreachable |
 | `LANGFUSE_PUBLIC_KEY` | Recommended | |
 | `LANGFUSE_BASE_URL` | Optional | Defaults to Langfuse cloud |
-| `OPENAI_MODEL` | Optional | Default `gpt-4o-mini`; use `gpt-4o` for stronger legal reasoning |
+| `OPENAI_MODEL` | Optional | Default `gpt-4.1-mini`; plan/report use full `gpt-4.1` automatically |
 | `PORT` | Set by Railway | Do not override |
 | `LEXAGENT_DATA_DIR` | Optional | Session path (default `/app/data`). Use if volume is elsewhere (e.g. `/app/persist/data`) |
 | `LEXAGENT_REPORTS_DIR` | Optional | Report path (default `/app/reports`). Use if volume is elsewhere (e.g. `/app/persist/reports`) |
