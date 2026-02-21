@@ -1,6 +1,10 @@
 # Localhost test links
 
-Use these URLs when the backend is running **locally** (e.g. `make backend` or `uv run uvicorn app.main:app --port 8000`).
+Use these URLs when the backend is running **locally**.
+
+**Start the backend with either:**
+- **UV:** `make backend` or `uv run uvicorn app.main:app --port 8000`
+- **venv + pip:** activate your venv, then `uvicorn app.main:app --reload --port 8000` (see README Option B)
 
 ## Backend (API + React)
 

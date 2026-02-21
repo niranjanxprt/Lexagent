@@ -20,7 +20,7 @@ This started as a weekend prototype to see how far a manual agent loop could get
 ## Prerequisites
 
 - Python 3.11+
-- [UV](https://docs.astral.sh/uv/) package manager
+- **Either** [UV](https://docs.astral.sh/uv/) **or** venv + pip (see Quick Start below)
 - Node.js 18+ (for React frontend only)
 - API keys: OpenAI, Tavily; Langfuse recommended for tracing (agent falls back to inline prompts if unreachable)
 
@@ -28,7 +28,11 @@ This started as a weekend prototype to see how far a manual agent loop could get
 
 ## Quick Start
 
-### 1. Clone and install
+You can use **UV** (default) or **venv + pip**; both work with the same `requirements.txt`. We keep a single toolchain (UV or pip) to avoid extra complexity; Poetry is not required.
+
+### Option A — UV (recommended)
+
+#### 1. Clone and install
 
 ```bash
 git clone <repo>
@@ -36,7 +40,7 @@ cd lexagent
 uv sync
 ```
 
-### 2. Configure environment
+#### 2. Configure environment
 
 ```bash
 cp .env.example .env
@@ -53,13 +57,13 @@ LEXAGENT_API_URL=http://localhost:8000
 OPENAI_MODEL=gpt-4o-mini
 ```
 
-### 3. Initialize Langfuse prompts (required)
+#### 3. Initialize Langfuse prompts (if using Langfuse)
 
 ```bash
 uv run python app/init_langfuse_prompts.py
 ```
 
-### 4. Run the application
+#### 4. Run the application
 
 **Terminal 1 — Backend**
 
@@ -79,6 +83,68 @@ make frontend
 make react
 # UI: http://localhost:5173
 ```
+
+---
+
+### Option B — venv + pip
+
+Use this if you prefer standard Python venv and pip (no UV installed).
+
+#### 1. Clone and create venv
+
+```bash
+git clone <repo>
+cd lexagent
+python3 -m venv .venv
+```
+
+**Activate the venv:**
+
+- macOS/Linux: `source .venv/bin/activate`
+- Windows (cmd): `.venv\Scripts\activate.bat`
+- Windows (PowerShell): `.venv\Scripts\Activate.ps1`
+
+#### 2. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+#### 3. Configure environment
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your API keys (same as in Option A).
+
+#### 4. Initialize Langfuse prompts (if using Langfuse)
+
+```bash
+python app/init_langfuse_prompts.py
+```
+
+#### 5. Run the application
+
+**Terminal 1 — Backend**
+
+```bash
+uvicorn app.main:app --reload --port 8000
+```
+
+**Terminal 2 — Frontend (choose one)**
+
+```bash
+# Streamlit
+streamlit run frontend/ui.py
+# UI: http://localhost:8501
+
+# Or React (requires Node.js)
+cd frontend-react && npm install && npm run dev
+# UI: http://localhost:5173
+```
+
+*Note: The Makefile uses `uv run`; for a pip-only setup use the commands above (no `make` required).*
 
 ### Local Docker (API + React, optional Streamlit)
 
@@ -211,6 +277,7 @@ Every session produces a trace in Langfuse: per-task sub-spans, token usage, lat
 | [docs/UPDATES.md](docs/UPDATES.md) | Recent improvements |
 | [transcript.md](transcript.md) | Example session transcript |
 | [docs/LOCALHOST_TEST_LINKS.md](docs/LOCALHOST_TEST_LINKS.md) | Localhost URLs for testing |
+| [docs/REMAINING_TASKS.md](docs/REMAINING_TASKS.md) | What’s done vs remaining (Langfuse, Railway, manual checks) |
 | [frontend-react/README.md](frontend-react/README.md) | React frontend details |
 
 ---
