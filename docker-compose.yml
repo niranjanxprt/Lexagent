@@ -1,7 +1,10 @@
-# Local development: backend (API + React) and optional Streamlit UI
+# Local development: Complete stack with all three UIs
 # Usage: docker compose up --build
-# - Backend + React: http://localhost:8000
-# - Streamlit: http://localhost:8501 (set LEXAGENT_API_URL to backend)
+# - Backend API: http://localhost:8000
+# - React frontend: http://localhost:3000
+# - Streamlit UI: http://localhost:8501
+#
+# For Railway production: Use main Dockerfile (Backend + React static only, no Streamlit)
 services:
   backend:
     build:
@@ -25,12 +28,13 @@ services:
           memory: 2G
         reservations:
           memory: 512M
+    restart: unless-stopped
 
   streamlit:
     build:
       context: .
       dockerfile: Dockerfile
-    command: streamlit run frontend/ui.py --server.port 8501 --server.address 0.0.0.0
+    command: streamlit run frontend/ui.py --server.port 8501 --server.address 0.0.0.0 --logger.level=info
     ports:
       - "8501:8501"
     env_file:
@@ -45,6 +49,7 @@ services:
           memory: 1G
         reservations:
           memory: 256M
+    restart: unless-stopped
 
   react:
     build:
