@@ -6,7 +6,7 @@ A legal research AI agent that takes a research goal, breaks it into actionable 
 
 ### Background
 
-This started as a weekend prototype to see how far a minimal agent loop could get on real legal research. The current design — compressed context notes and Langfuse-versioned prompts — came from iterating on token budgets and search specificity. PDF ingestion and RAG are natural next steps; they were left out initially so the core loop could ship without half-finished extras.
+This started as Libra AI task see how far a minimal agent loop could get on real legal research. The current design — compressed context notes and Langfuse-versioned prompts — came from iterating on token budgets and search specificity. PDF ingestion and RAG are natural next steps; they were left out initially so the core loop could ship without half-finished extras.
 
 ## Features
 
