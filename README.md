@@ -2,6 +2,8 @@
 
 A legal research AI agent that takes a research goal, breaks it into actionable tasks, executes them using real web search tools, and produces a structured markdown report.
 
+**Live demo:** [lexagent-production.up.railway.app](https://lexagent-production.up.railway.app) | **Repo:** [github.com/niranjanxprt/Lexagent](https://github.com/niranjanxprt/Lexagent)
+
 ### Project background
 
 This started as a weekend prototype to see how far a manual agent loop could get on real legal research without framework overhead. The main challenges were: (1) keeping context small enough to stay within token budgets across multiple tasks, and (2) making Tavily queries specific enough to get regulation-level detail. The current design — compressed context notes and Langfuse-versioned prompts — emerged from iterating on both. PDF ingestion and RAG were deliberately excluded; they are the obvious next layer but shipping them half-finished would make the demo worse, not better.
@@ -35,8 +37,8 @@ You can use **UV** (default) or **venv + pip**; both work with the same `require
 #### 1. Clone and install
 
 ```bash
-git clone <repo>
-cd lexagent
+git clone https://github.com/niranjanxprt/Lexagent.git
+cd Lexagent
 uv sync
 ```
 
@@ -88,8 +90,8 @@ Use this if you prefer standard Python venv and pip (no UV installed).
 #### 1. Clone and create venv
 
 ```bash
-git clone <repo>
-cd lexagent
+git clone https://github.com/niranjanxprt/Lexagent.git
+cd Lexagent
 python3 -m venv .venv
 ```
 
