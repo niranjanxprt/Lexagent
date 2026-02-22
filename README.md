@@ -199,7 +199,53 @@ Why this split matters:
 
 ## Architecture
 
-High-level layout and design are documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (system components, agent loop, data models, prompt architecture, deployment). Key modules: `agent.py` (loop), `main.py` (HTTP), `storage.py` (JSON persistence), `tools.py` (Tavily + report writer), `security.py` (input validation).
+### System components
+
+```mermaid
+flowchart LR
+  subgraph frontend [Frontend]
+    React[React Vite + TypeScript]
+  end
+  subgraph backend [Backend]
+    FastAPI[FastAPI main.py]
+    Agent[agent.py loop]
+    Storage[storage.py]
+    Tools[tools.py]
+  end
+  subgraph external [External]
+    Langfuse[Langfuse]
+    Tavily[Tavily API]
+    OpenAI[OpenAI API]
+  end
+  React -->|REST| FastAPI
+  FastAPI --> Agent
+  FastAPI --> Storage
+  FastAPI --> Tools
+  Agent --> Langfuse
+  Agent --> OpenAI
+  Tools --> Tavily
+```
+
+### Agent loop
+
+```mermaid
+flowchart TB
+  Goal[User goal]
+  Plan[generate_plan]
+  Execute[execute_task per task]
+  Refine[refine-query]
+  Search[search_web Tavily]
+  Compress[compress-results]
+  Reflect[reflect]
+  Report[generate_final_report]
+  Goal --> Plan
+  Plan --> Execute
+  Execute --> Refine --> Search --> Compress --> Reflect
+  Reflect --> Execute
+  Execute --> Report
+```
+
+High-level layout and design are documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (data models, prompt architecture, deployment). Key modules: `agent.py` (loop), `main.py` (HTTP), `storage.py` (JSON persistence), `tools.py` (Tavily + report writer), `security.py` (input validation).
 
 ---
 
@@ -298,6 +344,17 @@ Every session produces a trace in Langfuse: per-task sub-spans, token usage, lat
 - **Security false positives:** Queries containing instruction-override phrases (e.g. "ignore previous instructions", "you are now"), jailbreak wording, or HTML/script patterns may be blocked; rephrase to neutral legal language (e.g. “obligations of a data processor under GDPR Article 28”).
 - **Retry:** Tavily uses 3-attempt retry with backoff; OpenAI timeouts still fail the current task; session stays resumable.
 - **Context cap:** `context_notes` is truncated at 8,000 chars in execution and 12,000 in the report for long sessions.
+
+## Future planning
+
+Planned improvements (from prior exploration, not yet merged):
+
+- **Rate limiting** — API rate limits to protect against abuse and control costs.
+- **OpenAI retry** — Retry with backoff for task execution (in addition to existing Tavily retry) so transient OpenAI errors don’t fail the current task.
+- **Storage locking** — File-based or in-process locking around session read/write for safer concurrent access (e.g. multiple execute-step calls).
+- **Sessions pagination** — Paginate `GET /sessions` for deployments with many sessions.
+- **Integration tests** — API-level tests (e.g. `tests/test_api.py`) for start, execute, report flows without relying on live LLM/Tavily.
+- **Railway hardening** — Deployment tweaks (e.g. `start.sh` robustness, healthcheck) and observability improvements for production.
 
 ## License
 
