@@ -1,15 +1,16 @@
-.PHONY: help install setup backend dev lint lint-fix test clean logs kill react-install react react-build
+.PHONY: help install setup run backend dev lint lint-fix test clean logs kill react-install react react-build
 
 help:
 	@echo "LexAgent - Makefile Commands"
 	@echo "============================="
 	@echo ""
-	@echo "Setup & Installation:"
+	@echo "Setup & Running:"
+	@echo "  make setup          Copy .env.example to .env (then add API keys)"
+	@echo "  make run            Setup + install + start backend and React"
 	@echo "  make install        Install dependencies with UV"
-	@echo "  make react-install  Install React frontend dependencies"
-	@echo "  make setup          Copy .env.example to .env"
+	@echo "  make react-install Install React frontend dependencies"
 	@echo ""
-	@echo "Running:"
+	@echo "Running (manual):"
 	@echo "  make backend       Start FastAPI backend on port 8000"
 	@echo "  make react         Start React frontend on port 5173"
 	@echo "  make dev           Run backend + React together"
@@ -97,6 +98,10 @@ kill:
 react-install:
 	@echo "Installing React frontend dependencies..."
 	cd frontend-react && npm install
+
+run: setup install react-install
+	@echo "Starting LexAgent..."
+	$(MAKE) dev
 
 react:
 	@echo "Starting React frontend on port 5173..."
