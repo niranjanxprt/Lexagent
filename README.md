@@ -98,6 +98,18 @@ flowchart TB
 
 The loop: plan (decompose goal into tasks) → for each task, refine query → search → compress results → reflect (fully/partially/not addressed) → repeat or generate report. Full data flow and modules: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
+### Prompts and model use
+
+Five prompts drive the agent. **gpt-4.1** (full) is used for the two high-stakes steps that need deeper reasoning; **gpt-4.1-mini** is used for the high-frequency, narrower steps to keep cost and latency down. The base model is set by `OPENAI_MODEL` (default `gpt-4.1-mini`); the full model is derived by stripping the `-mini` suffix (e.g. `gpt-4.1-mini` → `gpt-4.1`).
+
+| Prompt | Model | Why it’s used |
+|--------|--------|----------------|
+| **generate-plan** | gpt-4.1 | Decomposes the research goal into 5–7 web-searchable tasks. Needs to cover primary law, guidance, case law, jurisdiction, and compliance without duplicating source types. |
+| **refine-query** | gpt-4.1-mini | Turns one task into a single web search query (max ~18 words). Narrow job: jurisdiction + instrument + topic + optional article/section. |
+| **compress-results** | gpt-4.1-mini | Summarizes raw Tavily results into 2–4 sentences for the memo. Sees only the raw search output (no prior context), so the model can’t rubber-stamp; it must ground the summary in the results. |
+| **reflect** | gpt-4.1-mini | Decides whether the task is fully addressed, partially addressed, or not addressed and returns a short “gap” string. Output is small, structured JSON; used to decide whether to run another search or move on. |
+| **generate-report** | gpt-4.1 | Synthesizes the final Markdown report from all task summaries and context notes. High-stakes: citations and structure must be correct and grounded in the research. |
+
 ---
 
 ## API Endpoints
