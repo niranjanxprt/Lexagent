@@ -93,31 +93,23 @@ Configure in Railway: **Settings → Health Check** with path `/health` if neede
 
 ---
 
-## Local Docker (API + React)
+## Test Docker image locally (optional)
 
-The backend image builds React and serves it at `/`. One container = full app.
+Same image as Railway. Requires `.env` with `OPENAI_API_KEY` and `TAVILY_API_KEY`.
 
 ```bash
-docker compose up --build backend
+docker build -t lexagent .
+docker run -p 8000:8000 --env-file .env -v "$(pwd)/data:/app/data" -v "$(pwd)/reports:/app/reports" lexagent
 ```
 
 - **http://localhost:8000** — React UI + API (same as Railway)
-
-Or `docker compose up --build` to also run a separate React container on :3000; the backend alone is enough for testing.
-
-Volumes in `docker-compose.yml`:
-
-- `./data:/app/data` — session JSON
-- `./reports:/app/reports` — report markdown
-
-Data persists across container restarts. Same behavior as running `make backend` and `make react` locally.
 
 ### Session data and git
 
 **Sessions and reports are not in git.** They are in `.gitignore` (`data/*.json`, `reports/*.md`). When you clone the repo or redeploy:
 
 - **Local:** You get empty `data/` and `reports/` (or `.gitkeep` only). Sessions persist only if you keep the same `./data` and `./reports` directories between runs.
-- **Docker:** Volumes `./data:/app/data` and `./reports:/app/reports` persist data across `docker compose` restarts. A fresh clone has no prior sessions.
+- **Docker:** Use `-v` to mount `./data` and `./reports`; data persists across container restarts. A fresh clone has no prior sessions.
 - **Railway:** Sessions persist only if you have a volume mounted at `/app/data` (or `LEXAGENT_DATA_DIR`). Without a volume, each redeploy starts with no sessions.
 
 The React frontend stores the last-viewed session ID in browser `localStorage`; that is per-browser and not in git.

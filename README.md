@@ -28,6 +28,8 @@ This started as a weekend prototype to see how far a manual agent loop could get
 
 ## Quick Start
 
+Local run uses **make** only (no Docker required). Docker is used for deployment (e.g. Railway).
+
 1. **Clone and setup**
    ```bash
    git clone https://github.com/niranjanxprt/Lexagent.git
@@ -42,7 +44,7 @@ This started as a weekend prototype to see how far a manual agent loop could get
    ```
    Backend: http://localhost:8000 · React: http://localhost:5173 · API docs: http://localhost:8000/docs
 
-Docker: see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+To deploy (Railway or Docker): [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ---
 
@@ -127,7 +129,7 @@ Interactive docs: http://localhost:8000/docs
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture, agent loop, deployment |
 | [docs/TESTING.md](docs/TESTING.md) | Testing guide (Python + React) |
 | [docs/EVALUATION.md](docs/EVALUATION.md) | Evaluation design and criteria |
-| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deployment (Railway, Docker) |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deploy to Railway or run with Docker |
 | [docs/LANGFUSE_SETUP.md](docs/LANGFUSE_SETUP.md) | Langfuse prompt management |
 | [docs/SECURITY.md](docs/SECURITY.md) | Security guardrails |
 | [docs/BEST_PRACTICES.md](docs/BEST_PRACTICES.md) | Best practices |

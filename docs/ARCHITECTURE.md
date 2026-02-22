@@ -14,7 +14,7 @@ LexAgent is a legal research agent built with a manual agent loop (no LangChain/
 ┌─────────────────────────────────────────────────────────────────┐
 │                         Browser                                   │
 │                  React (Vite + TypeScript)                        │
-│  localhost:5173 (make dev) or :3000 (docker-compose) or :8000 (prod) │
+│  localhost:5173 (make dev) or :8000 (prod / Docker)                 │
 └────────────────────────────┬────────────────────────────────────┘
                              │ REST API
 ┌────────────────────────────▼────────────────────────────────────┐
@@ -73,7 +73,6 @@ lexagent/
 ├── data/                      # Session JSON files (gitignored)
 ├── reports/                   # Markdown report files (gitignored)
 ├── Dockerfile                 # Multi-stage: Node (React) → Python (serve both)
-├── docker-compose.yml        # Local: backend:8000 + react:3000
 ├── start.sh                   # Entrypoint: uvicorn on $PORT
 └── railway.toml               # Railway deploy config
 ```
@@ -182,13 +181,7 @@ Sessions persist only with a Railway Volume at `/app/data`.
 
 ### Local Development
 
-```
-docker-compose.yml
-├── backend:8000  — FastAPI + React static files (Dockerfile)
-└── react:3000    — React dev server (frontend-react/Dockerfile)
-```
-
-Or `make dev` to run both without Docker (backend on :8000, React on :5173).
+`make dev` (or `make run`): backend on :8000, React on :5173. No Docker required. To test the production image locally: `docker build -t lexagent .` then `docker run -p 8000:8000 --env-file .env lexagent` (see [DEPLOYMENT.md](DEPLOYMENT.md)).
 
 ---
 

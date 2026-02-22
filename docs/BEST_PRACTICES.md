@@ -35,7 +35,7 @@
 
 - Use `GET /health` for load balancer health checks
 - For production, restrict CORS to your deployed frontend domain(s). The demo uses an explicit localhost allowlist (ports 3000, 5173, 5174, 8000) — it does NOT use `["*"]`.
-- Sessions and reports use `/app/data` and `/app/reports`; mount volumes there for persistence (e.g. Railway Volumes, Docker compose)
+- Sessions and reports use `/app/data` and `/app/reports`; mount volumes there for persistence (e.g. Railway Volumes, Docker `-v`)
 - See [DEPLOYMENT.md](DEPLOYMENT.md) for Railway and local Docker
 
 ## Documentation

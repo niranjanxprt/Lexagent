@@ -1,5 +1,5 @@
 #!/bin/bash
-# Pre-merge verification: ensures Docker + React work before merging dev to main.
+# Pre-merge verification: tests, lint, Docker build and run (same image as Railway).
 # Run from repo root: bash scripts/verify_before_merge.sh
 set -e
 
@@ -26,15 +26,20 @@ echo ""
 
 # 4. Docker build (same as Railway)
 echo "4. Building Docker image (Railway-equivalent)..."
-docker compose build backend
+docker build -t lexagent-verify .
 echo "   ✓ Docker build passed"
 echo ""
 
-# 5. Full stack test
-echo "5. Starting Docker Compose (backend + react)..."
-docker compose down 2>/dev/null || true
-docker compose up -d
-echo "   Waiting for services..."
+# 5. Run single container (same as Railway)
+echo "5. Starting container..."
+docker rm -f lexagent-verify 2>/dev/null || true
+if [[ ! -f .env ]]; then
+  echo "   ⚠ .env not found; starting with minimal env (health check only)"
+  docker run -d -p 8000:8000 --name lexagent-verify -e OPENAI_API_KEY= -e TAVILY_API_KEY= lexagent-verify
+else
+  docker run -d -p 8000:8000 --env-file .env --name lexagent-verify lexagent-verify
+fi
+echo "   Waiting for server..."
 sleep 5
 
 # 6. Health check
@@ -44,7 +49,7 @@ if [[ "$HEALTH" == *"ok"* ]]; then
   echo "   ✓ /health OK"
 else
   echo "   ✗ /health failed: $HEALTH"
-  docker compose down
+  docker rm -f lexagent-verify 2>/dev/null || true
   exit 1
 fi
 
@@ -54,24 +59,15 @@ if [[ "$ROOT_STATUS" == "200" ]]; then
   echo "   ✓ / (React app) OK"
 else
   echo "   ✗ / returned $ROOT_STATUS"
-  docker compose down
+  docker rm -f lexagent-verify 2>/dev/null || true
   exit 1
-fi
-
-# 8. React container (optional)
-REACT_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/ 2>/dev/null || echo "000")
-if [[ "$REACT_STATUS" == "200" ]]; then
-  echo "   ✓ React dev container OK"
-else
-  echo "   ⚠ React container not reachable (optional for Railway)"
 fi
 
 echo ""
 echo "=== All checks passed! Safe to merge dev → main ==="
 echo ""
-echo "Railway note: Main branch uses the same Dockerfile. No Streamlit;"
-echo "backend serves React at / and API at /agent/*. Deployment unchanged."
+echo "Railway uses the same Dockerfile. Backend serves React at / and API at /agent/*."
 echo ""
 
-docker compose down
-echo "Containers stopped."
+docker rm -f lexagent-verify 2>/dev/null || true
+echo "Container stopped."
