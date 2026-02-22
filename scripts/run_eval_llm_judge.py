@@ -12,7 +12,10 @@ Create those configs via Langfuse CLI first: see scripts/run_eval_llm_judge_cli.
 import argparse
 import json
 import os
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import httpx
 from dotenv import load_dotenv

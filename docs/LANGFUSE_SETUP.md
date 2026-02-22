@@ -198,12 +198,13 @@ If you see connection errors, verify:
 5. ✅ Watch prompts being used in Langfuse dashboard
 6. ✅ Edit prompts and see changes reflected on next task execution (within cache TTL)
 
-## Reverting to Hardcoded Prompts
+## Disabling Langfuse prompt fetching
 
-To revert to hardcoded prompts, restore `app/agent.py` from git:
+The agent always has inline `PROMPT_FALLBACKS` in `app/agent.py` as a permanent cold-start fallback. To bypass Langfuse entirely (e.g. for offline testing), modify `get_prompt_safe()` in `app/agent.py` to always return the fallback:
 
-```bash
-git checkout HEAD -- app/agent.py
+```python
+def get_prompt_safe(name: str, prompt_type: str = "chat"):
+    return FallbackPrompt(PROMPT_FALLBACKS[name])
 ```
 
-This will restore the version with inline prompts (and remove Langfuse fetches).
+Note: fallback prompts are shorter than the V4 Langfuse prompts. For production quality, keep Langfuse enabled.

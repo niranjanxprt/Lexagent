@@ -151,51 +151,7 @@ Optional: `docker compose up --build` also starts a separate React container on 
 
 Sessions and reports persist when you mount volumes (default: `./data`, `./reports`). Same setup without Docker: `make backend` and `make react` (or `make dev`).
 
----
-
-## How the Agent Loop Works
-
-1. **Goal Input** — User submits a legal research goal via the UI
-2. **Planning** — LLM decomposes the goal into 3–6 specific research tasks
-3. **Execution** — For each task:
-   - Refine the search query using task context + prior research
-   - Execute web search via Tavily API
-   - Compress raw results into a 2–3 sentence summary (never stored)
-   - Reflect on findings and update context notes
-   - Mark task as done
-4. **Report** — Synthesize a markdown report from accumulated context
-5. **Persistence** — Session state saved as JSON; users can resume anytime
-
-**Context:** Raw search results (~10–50KB per task) are compressed to 2–3 sentences (~150–200 chars) before being appended to `context_notes`. For a 5-task session that’s ~1,000 chars of notes vs ~250KB of raw results (~250× compression). Token growth is linear in task count but small. The combined `context_notes` blob is capped at 8,000 chars in the executor and 12,000 in the report step to avoid overflowing the prompt.
-
----
-
-## Why This Uses 5 Prompts
-
-The system uses five focused prompts instead of one large prompt to keep each step narrow, testable, and safer against hallucinations.
-
-1. **`generate-plan`** — Converts one broad goal into concrete research tasks.
-2. **`refine-query`** — Turns each task into a precise search query that favors authoritative sources.
-3. **`compress-results`** — Reduces raw search output into grounded summaries before adding context.
-4. **`reflect`** — Performs a completeness check so weak findings are identified early.
-5. **`generate-report`** — Synthesizes all validated notes into the final report.
-
-Why this split matters:
-- **Separation of concerns:** each prompt has one job, which improves consistency.
-- **Lower hallucination risk:** the compression step only sees raw search snippets; the reflection step audits completeness.
-- **Smaller context footprint:** only compressed notes flow forward, not raw search payloads.
-- **Better prompt management:** each prompt can be versioned, rolled back, and A/B tested independently in Langfuse.
-- **Clearer evaluations:** you can score failures by stage (planning, retrieval query quality, compression fidelity, reflection quality, report synthesis).
-
----
-
-### Failure modes and resilience
-
-- **Thin Tavily results:** The reflect step evaluates whether the task was adequately answered; gaps are recorded in `context_notes` and influence later queries.
-- **Task execution failure:** `task.status` is set to `in_progress` and the session is saved *before* running the search. A crash mid-task leaves a recoverable state; the failed task can be retried.
-- **Task marked failed:** The agent continues to the next pending task; the failed task stays in session state and is visible in the UI.
-- **Langfuse unreachable:** The agent falls back to inline prompt copies in `app/agent.py`; execution continues, tracing is unavailable until connectivity returns.
-- **OpenAI/Tavily timeout:** The current task fails (see Known Limitations); session remains resumable.
+The agent loop, context compression, prompt rationale, and failure resilience are documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Architecture
 
@@ -291,7 +247,7 @@ uv run ruff check --fix app/
 
 Every session produces a trace in Langfuse: per-task sub-spans, token usage, latency, and the prompt version used for each generation. **Prompt workflow:** edit in Langfuse UI → save → apply `production` label; the running app picks up changes within the SDK cache TTL (~60s). **Fallback:** if Langfuse is unreachable, the agent uses inline prompt copies in `app/agent.py` so it never fails solely due to observability.
 
-**Model usage (single env var `OPENAI_MODEL`):** Full model **gpt-4.1** for generate-plan and generate-report; default **gpt-4.1-mini** for refine-query, compress-results, and reflect. Set `OPENAI_MODEL=gpt-4.1-mini` (or omit) for this split; see `_full_model()` in `app/agent.py`.
+**Model split:** Complex reasoning steps use **gpt-4.1** (full model) — `generate-plan` (decomposing the goal into tasks) and `generate-report` (synthesizing the final Markdown report). Simpler, high-frequency steps use **gpt-4.1-mini** — `refine-query`, `compress-results`, and `reflect`. This balances quality where it matters against cost and latency. Controlled by a single env var `OPENAI_MODEL`; `_full_model()` in `app/agent.py` derives the full model by stripping the `-mini` suffix.
 
 ## Documentation
 
@@ -310,14 +266,61 @@ Every session produces a trace in Langfuse: per-task sub-spans, token usage, lat
 
 ---
 
-## Evaluation strategy
+## Evaluation
 
-- **Per-scenario checklists:** See [docs/EVALUATION.md](docs/EVALUATION.md) for required elements and Pass/Partial/Fail criteria for each of the five scenarios.
-- **LLM-as-judge (optional):** After a session, prompt GPT-4 to rate the report 1–5 on factual accuracy, legal specificity, source attribution, completeness; store in Langfuse linked to prompt version.
-- **Regression:** Re-run evaluation scenarios when prompt versions change; compare against gold reports.
-- **Hallucination detection:** Cross-reference article numbers in the report against source URLs in research notes.
+The system uses a 3-tier eval strategy. Full details, checklists, and LLM-as-judge setup: [docs/EVALUATION.md](docs/EVALUATION.md).
+
+### Tier 1 — E2E pipeline regression (no Langfuse required)
+
+`scripts/run_simple_eval.py` runs the full pipeline (plan → execute all tasks → generate report) against 3 real legal goals from `scripts/eval_dataset.json` and checks each report for required keywords.
+
+```bash
+uv run python scripts/run_simple_eval.py          # all 3 goals
+uv run python scripts/run_simple_eval.py --limit 1 # quick smoke test
+```
+
+| Goal | Required keywords |
+|------|------------------|
+| GDPR requirements for AI in Germany | `GDPR`, `Article`, `BDSG` |
+| EU AI Act obligations for high-risk AI | `AI Act`, `high-risk`, `Article` |
+| Employee monitoring data protection in Germany | `BDSG`, `data protection`, `employee` |
+
+**Pass:** all keywords present in generated report. **Fail:** any keyword missing or pipeline error. This is the single most useful validation after prompt or code changes.
+
+### Tier 2 — Reflect prompt unit test (requires Langfuse)
+
+`scripts/run_eval.py` tests only the `reflect` prompt against 3 golden examples in the Langfuse dataset `lexagent-eval-v1`. Scoring is strict: **1.0** if the JSON status field matches exactly, **0.0** otherwise.
+
+```bash
+# Create dataset first (once only):
+uv run python scripts/create_eval_dataset.py
+# Then run eval:
+uv run python scripts/run_eval.py
+```
+
+| Dataset item | Input type | Expected status |
+|---|---|---|
+| `reflect-fully-addressed` | GDPR Article 5 with source | `fully_addressed` |
+| `reflect-partially-addressed` | GDPR Article 5, no enforcement cases | `partially_addressed` |
+| `reflect-no-results` | Empty findings | `not_addressed` |
+
+Scores are posted to Langfuse under **Datasets → lexagent-eval-v1 → reflect-eval-v1**. Threshold: average ≥ 0.8.
+
+### Tier 3 — LLM-as-judge (requires Langfuse)
+
+`scripts/run_eval_llm_judge.py` runs the same reflect items but scores semantically using both `gpt-4.1` and `gpt-4.1-mini` as judges (0.0–1.0). Partial credit for correct status but weak gap. Threshold: average ≥ 0.7 per judge.
+
+```bash
+uv run python scripts/run_eval_llm_judge.py
+```
+
+### Langfuse state (verified)
+
+All 5 prompts are live under `legal-research/` with `production` label. Dataset `lexagent-eval-v1` has 4 items (3 reflect + 1 plan). Prompt versions and eval runs are visible in the Langfuse dashboard.
 
 ## Evaluation scenarios
+
+Success criteria for each scenario: the final report must cite the listed articles/sections, include at least one primary source URL, and contain no hallucinated references.
 
 1. **GDPR AI Compliance** — Article 5, 25, 32; at least one BDSG reference; ≥3 source URLs; no hallucinated article numbers.
 2. **EU AI Act high-risk** — Article 9, 13, 16; provider vs deployer; reference to EUR-Lex or official EU source.
@@ -330,14 +333,6 @@ Every session produces a trace in Langfuse: per-task sub-spans, token usage, lat
 - **Claude / Cursor:** Refactoring the execute_task flow into the 4-step pattern (refine → search → compress → reflect); drafting security regex patterns; React component structure. Suggestions to combine compress and reflect into one prompt were rejected — the isolated design prevents the model from rubber-stamping its own output.
 - **GitHub Copilot:** Boilerplate for FastAPI endpoints and Pydantic models; test scaffolding.
 - **Human oversight:** Agent loop state machine (pending → in_progress → done/failed); decision to set in_progress and save before search; Langfuse prompt versions and production label workflow; security pattern false-positive analysis; all trade-offs documented here and in docs.
-
-## Trade-offs
-
-- **No agent framework** — Explicit state machine and no hidden framework state; more boilerplate, full control and clear Langfuse tracing.
-- **Single tool (Tavily)** — Every task uses web search; predictable execution path; report synthesis uses compiled research notes (no extra search during report generation).
-- **No RAG over private docs** — Public web only; extension path: add a document-search tool without changing the loop.
-- **JSON persistence** — Sessions in `data/`; simple and auditable; not for high-concurrency production; swap via `storage.py` for SQLite/Postgres.
-- **CORS** — Demo uses an explicit localhost allowlist (ports 3000, 5173, 5174, 8000); production should restrict to known frontend origins.
 
 ## Known limitations
 

@@ -122,6 +122,33 @@ ls reports/*.md
 
 ---
 
+## Integration Regression Eval (requires API keys)
+
+`scripts/run_simple_eval.py` runs the full agent pipeline against 3 predefined legal goals and checks for required keywords in each report. This is the most impactful eval — it validates the entire plan → execute → report loop with real API calls and requires no Langfuse setup.
+
+```bash
+uv run python scripts/run_simple_eval.py
+# Run only 1 item for a quick smoke test:
+uv run python scripts/run_simple_eval.py --limit 1
+```
+
+Requires `OPENAI_API_KEY` and `TAVILY_API_KEY` in `.env`. See [EVALUATION.md](EVALUATION.md) for the full strategy.
+
+### Langfuse dataset eval (optional)
+
+`scripts/run_eval.py` scores the `reflect` prompt against golden examples in Langfuse. Requires Langfuse credentials and the dataset to exist first:
+
+```bash
+# Step 1 — create the dataset (run once)
+uv run python scripts/create_eval_dataset.py
+# Step 2 — run eval and post scores to Langfuse
+uv run python scripts/run_eval.py
+```
+
+Scores appear in the Langfuse dashboard under **Datasets → lexagent-eval-v1**.
+
+---
+
 ## Performance
 
 - First API call (planning): ~3–5 s

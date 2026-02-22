@@ -17,32 +17,14 @@ All user inputs are validated before being passed to LLM prompts. The security m
 
 ### 1. Input Validation
 
-All user inputs go through `sanitize_user_input()` which checks for:
+All user inputs go through `sanitize_user_input()` in `app/security.py` which checks for:
 
-```python
-# Check 1: Length validation
-if len(text) > max_length:
-    raise PromptInjectionError("Input exceeds maximum length")
+- **Length** — goal capped at 500 chars, search result content at 5,000 chars
+- **Injection patterns** — narrow regexes targeting instruction overrides, system prompt injection, jailbreak + safety-filter keywords, HTML/script tags, event handler attributes, and shell operator sequences; patterns are intentionally narrow to avoid false positives on legal phrasing
+- **Control characters** — more than 5 non-printable characters (excluding `\n`, `\t`, `\r`) raises an error
+- **Null bytes** — rejected outright
 
-# Check 2: Common injection patterns
-injection_patterns = [
-    r"(?i)(ignore|disregard|forget).*?(previous|prior|above)",
-    r"(?i)system.*?prompt",
-    r"(?i)jailbreak|bypass|override",
-    r"(?i)<\s*(script|iframe|embed)",  # HTML injection
-    r"(?i)on\w+\s*=",  # Event handlers
-    r"(?i)(;|&&|\|\|)\s*(curl|wget|exec)",  # Shell commands
-]
-
-# Check 3: Control characters
-control_char_count = sum(1 for c in text if ord(c) < 32)
-if control_char_count > 5:
-    raise PromptInjectionError("Excessive control characters")
-
-# Check 4: Null bytes
-if '\x00' in text:
-    raise PromptInjectionError("Null bytes detected")
-```
+See `app/security.py` for the exact pattern list and rationale comments.
 
 ### 2. Goal Validation
 
@@ -60,31 +42,16 @@ except PromptInjectionError as e:
     raise HTTPException(status_code=400, detail=f"Invalid goal: {str(e)}")
 ```
 
-### 3. Task Description Validation
+### 3. Intentional Non-Validation of LLM-Generated Content
 
-Task descriptions validate:
-- Non-empty content
-- Maximum 1000 characters
-- No injection patterns
-- No null bytes
+Task titles, task descriptions, and `context_notes` produced by the LLM are **not validated** against injection patterns. Reasons:
 
-### 4. Context Notes Validation
+- Legal terminology triggers false positives — phrases like "execute a contract", "ignore prior obligations", and "act as contracting party" are normal legal language but match naive injection patterns.
+- The LLM is already inside the trust boundary — validating its output against user-injection patterns adds no meaningful security benefit.
 
-All accumulated research context is validated:
-- Each note is individually sanitized
-- Maximum 2000 characters per note
-- List format validation
-- Type checking
+**Validation boundary:** Only user-submitted input (`validate_goal()` at `POST /agent/start`) and external Tavily output (`validate_search_results()` in `execute_task()`) are validated.
 
-```python
-# In execute_task()
-try:
-    context_notes_validated = validate_context_notes(state.context_notes or [])
-except PromptInjectionError as e:
-    raise PromptInjectionError(f"Context validation failed: {e}")
-```
-
-### 5. Search Results Validation
+### 4. Search Results Validation
 
 Results from Tavily are validated for:
 - Dictionary structure
@@ -94,16 +61,14 @@ Results from Tavily are validated for:
 
 ```python
 def validate_search_results(results: dict) -> dict:
-    # Ensure valid structure
-    if not isinstance(results["results"], list):
-        raise PromptInjectionError(...)
-
-    # Sanitize each result
+    # Validates structure and sanitizes content with search-safe checks
+    # (length + control chars only — no injection patterns, to avoid false
+    # positives on legitimate source text like "You are now required to disclose")
     for item in results["results"]:
         sanitized_item = {
-            "title": sanitize_user_input(item["title"], max_length=500),
-            "url": item["url"],  # URLs are trusted
-            "content": sanitize_user_input(item["content"], max_length=5000),
+            "title": sanitize_search_result_content(item["title"], max_length=500),
+            "url": item["url"],  # URL from Tavily is trusted
+            "content": sanitize_search_result_content(item["content"], max_length=5000),
         }
 ```
 

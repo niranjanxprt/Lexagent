@@ -160,6 +160,8 @@ Input validation is applied **only at the API boundary** (user-submitted goal). 
 
 Validation checks: length (500 chars for goal), injection patterns (ignore instructions, system prompt, jailbreak, HTML tags, shell operators), null bytes, excessive control characters.
 
+**Request-scoped API key isolation (`app/context.py`):** Per-request API key overrides (`X-OpenAI-API-Key`, `X-Tavily-API-Key` headers) are stored in a Python `ContextVar`, not in `os.environ`. This isolates key overrides to the current request context, making concurrent requests safe without race conditions.
+
 See [SECURITY.md](SECURITY.md) for full pattern list and rationale.
 
 ---
@@ -209,6 +211,12 @@ Per-request key overrides via headers: `X-OpenAI-API-Key`, `X-Tavily-API-Key`.
 ---
 
 ## Key Design Decisions
+
+**Execute-step retry:** `POST /agent/{session_id}/execute` retries `execute_task()` up to 3 times before marking the task `failed` and returning HTTP 500. This is separate from the Tavily-level retry (3 attempts with exponential backoff) inside `search_web()`.
+
+**Partial report:** When all pending tasks are exhausted but some have `status == "failed"`, `generate_final_report()` still runs and produces a partial report. The response message is `"Partial report generated (N task(s) failed)."` Failed tasks remain visible in the session.
+
+**OpenAI error handling:** `AuthenticationError` from OpenAI returns HTTP 401. `APIError` returns HTTP 503. Both are registered as global FastAPI exception handlers in `app/main.py`.
 
 **No framework (LangChain / LangGraph):** The agent loop is ~50 lines in agent.py. A framework adds abstraction overhead and makes debugging harder. The manual loop makes every step visible and testable.
 

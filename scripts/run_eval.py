@@ -8,26 +8,33 @@ Results are posted back to Langfuse for dashboard tracking.
 
 import json
 import os
+import sys
+from pathlib import Path
+
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_REPO_ROOT))
 
 from dotenv import load_dotenv
 from langfuse import get_client
 from langfuse.openai import openai
 
-load_dotenv()
+# Explicit path so the script works from any working directory
+load_dotenv(_REPO_ROOT / ".env", override=True)
 langfuse = get_client()
 
 DATASET_NAME = "lexagent-eval-v1"
 
 
 def score_reflect_output(raw_output: str, expected_status: str) -> float:
-    """Returns 1.0 if valid JSON with correct status, 0.5 if valid JSON wrong status, 0.0 if invalid."""
+    """
+    Strict deterministic scorer: 1.0 = correct status, 0.0 = wrong status or invalid JSON.
+    Use run_eval_llm_judge.py for semantic partial credit on gap quality.
+    """
     try:
         parsed = json.loads(raw_output.strip())
-        if parsed.get("status") == expected_status:
-            return 1.0
-        return 0.5  # valid JSON but wrong status
+        return 1.0 if parsed.get("status") == expected_status else 0.0
     except Exception:
-        return 0.0  # invalid JSON
+        return 0.0
 
 
 def run_reflect_eval(item):
@@ -51,7 +58,12 @@ def run_reflect_eval(item):
 
 
 def main():
-    dataset = langfuse.get_dataset(DATASET_NAME)
+    try:
+        dataset = langfuse.get_dataset(DATASET_NAME)
+    except Exception as e:
+        print(f"ERROR: Could not fetch dataset '{DATASET_NAME}': {e}")
+        print("Run 'uv run python scripts/create_eval_dataset.py' first to create the dataset.")
+        sys.exit(1)
     reflect_items = [i for i in dataset.items if i.metadata.get("prompt") == "legal-research/reflect"]
 
     print(f"\nRunning eval on {len(reflect_items)} reflect items...")

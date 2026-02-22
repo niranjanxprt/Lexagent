@@ -6,10 +6,12 @@ Dataset contains golden examples for each prompt type.
 Use Langfuse dashboard to add more examples over time.
 """
 
+from pathlib import Path
+
 from dotenv import load_dotenv
 from langfuse import get_client
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parent.parent / ".env", override=True)
 langfuse = get_client()
 
 DATASET_NAME = "lexagent-eval-v1"
