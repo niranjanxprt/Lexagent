@@ -1,12 +1,12 @@
 # LexAgent — Legal Research AI Agent
 
-A legal research AI agent that takes a research goal, breaks it into actionable tasks, executes them using real web search tools, and produces a structured markdown report.
+A legal research AI agent that takes a research goal, breaks it into actionable tasks, executes them using real web search (Tavily), and produces a structured markdown report. You get a plan, stepwise execution with compressed context, and a final report with sources — no framework stack, just a manual agent loop and observability via Langfuse.
 
 **Live demo:** [lexagent-production.up.railway.app](https://lexagent-production.up.railway.app) | **Repo:** [github.com/niranjanxprt/Lexagent](https://github.com/niranjanxprt/Lexagent)
 
-### Project background
+### Background
 
-This started as a weekend prototype to see how far a manual agent loop could get on real legal research without framework overhead. The design — compressed context notes and Langfuse-versioned prompts — emerged from iterating on context size and Tavily query specificity. PDF ingestion and RAG were deliberately excluded for now.
+This started as a weekend prototype to see how far a minimal agent loop could get on real legal research. The current design — compressed context notes and Langfuse-versioned prompts — came from iterating on token budgets and search specificity. PDF ingestion and RAG are natural next steps; they were left out initially so the core loop could ship without half-finished extras.
 
 ## Features
 
@@ -44,7 +44,7 @@ Local run uses **make** only (no Docker required). Docker is used for deployment
    ```
    Backend: http://localhost:8000 · React: http://localhost:5173 · API docs: http://localhost:8000/docs
 
-To deploy (Railway or Docker): [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+Deploy (Railway or Docker): [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). For local development you don’t need Docker; the Makefile handles install and run.
 
 ---
 
@@ -96,7 +96,7 @@ flowchart TB
   Execute --> Report
 ```
 
-Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+The loop: plan (decompose goal into tasks) → for each task, refine query → search → compress results → reflect (fully/partially/not addressed) → repeat or generate report. Full data flow and modules: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ---
 
@@ -118,7 +118,7 @@ Interactive docs: http://localhost:8000/docs
 
 ## Development
 
-`make help` — list all commands. Tests and linting: [docs/TESTING.md](docs/TESTING.md).
+Run `make help` for all targets. Common: `make test` (Python), `make react-test` (frontend), `make lint`. See [docs/TESTING.md](docs/TESTING.md) for the full testing guide.
 
 ---
 
@@ -140,15 +140,13 @@ Interactive docs: http://localhost:8000/docs
 
 ## Evaluation
 
-See [docs/EVALUATION.md](docs/EVALUATION.md).
+E2E pipeline checks, reflect prompt tests, and LLM-as-judge setup are in [docs/EVALUATION.md](docs/EVALUATION.md).
 
 ---
 
-## Known limitations
+## What’s next
 
-- **Security:** Queries with instruction-override or jailbreak-style wording may be blocked; use neutral legal language.
-- **Retry:** Tavily retries with backoff; OpenAI timeouts fail the current task; session stays resumable.
-- **Context:** `context_notes` truncated at 8k/12k chars for long sessions.
+Planned directions (not in this repo yet): **RAG and PDF ingestion** (ingest contracts, regulations, or case law and ground answers in your corpus), rate limiting and auth for the API, optional database backend for sessions, and stronger retries for transient failures. The current design keeps the loop small and shippable so these can be added without rewriting the agent.
 
 ## License
 
