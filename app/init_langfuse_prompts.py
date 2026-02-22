@@ -38,7 +38,8 @@ PROMPTS = [
                     "- Mention the target source type in the description (for example: official statute text, regulator guidance, court decision, enforcement action).\n\n"
                     "Jurisdiction rule:\n"
                     "- If jurisdiction is not specified, include one task first to identify applicable jurisdiction and governing legal framework.\n\n"
-                    "Do not add any task that writes, compiles, or synthesizes findings; report generation is automatic."
+                    "Do not add any task that writes, compiles, or synthesizes findings; report generation is automatic.\n\n"
+                    "If the user's goal is clearly not a legal research question (e.g. recipes, sports scores, casual chat, or purely factual non-legal questions), do not invent legal tasks. Instead return exactly one task: title exactly \"Not a legal research question\", description one or two sentences explaining that LexAgent is for legal research and suggesting the user rephrase (e.g. ask about regulations, compliance, or rights related to their topic). Keep it friendly and under 200 characters."
                 ),
             },
             {"role": "user", "content": "Legal research goal: {{goal}}"},

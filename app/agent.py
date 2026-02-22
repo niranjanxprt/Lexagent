@@ -35,7 +35,8 @@ PROMPT_FALLBACKS: dict[str, list[dict]] = {
                 "Output contract: Return ONLY valid JSON, no markdown. Exact schema: {\"tasks\":[{\"title\":\"...\",\"description\":\"...\"}, ...]}\n\n"
                 "Coverage: collectively cover primary law, regulator guidance, enforcement/case law, jurisdiction, compliance. Avoid duplicate source types.\n"
                 "Each task: legal substance, one focused search, state what to find and why; prefer primary sources; mention target source type in description.\n"
-                "If jurisdiction unspecified, include one task first to identify jurisdiction and framework. No compile/synthesize task; report generation is automatic."
+                "If jurisdiction unspecified, include one task first to identify jurisdiction and framework. No compile/synthesize task; report generation is automatic.\n"
+                "If the goal is clearly not a legal research question (e.g. recipes, weather, chat), return exactly one task with title \"Not a legal research question\" and description one short sentence suggesting the user rephrase as a legal or compliance question."
             ),
         },
         {"role": "user", "content": "Legal research goal: {{goal}}"},
@@ -252,6 +253,12 @@ def execute_task(task: Task, state: AgentState) -> Task:
     4. Append compressed summary to state.context_notes
     Raw search results are NEVER stored — only the compressed summary is kept.
     """
+    if task.title == "Not a legal research question":
+        task.result = task.description or "LexAgent is for legal research. Try asking about regulations, compliance, or rights."
+        task.status = "done"
+        task.sources = []
+        state.context_notes = (state.context_notes or []) + [task.result]
+        return task
 
     # Step 1 — Build search query from task context + prior notes
     # Note: task.title, task.description, and context_notes are LLM-generated,

@@ -278,9 +278,9 @@ if STATIC_DIR.exists():
         if path in ("docs", "redoc", "openapi.json") or path.startswith("docs/") or path.startswith("redoc/"):
             from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
 
-            if path == "docs" or path.startswith("docs"):
+            if path == "docs" or path.startswith("docs/"):
                 return get_swagger_ui_html(openapi_url="/openapi.json", title=app.title + " - Swagger UI")
-            if path == "redoc" or path.startswith("redoc"):
+            if path == "redoc" or path.startswith("redoc/"):
                 return get_redoc_html(openapi_url="/openapi.json", title=app.title + " - ReDoc")
             if path == "openapi.json":
                 from fastapi.responses import JSONResponse
