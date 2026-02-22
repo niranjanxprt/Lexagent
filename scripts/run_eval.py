@@ -52,7 +52,11 @@ def run_reflect_eval(item):
         response_format={"type": "json_object"},
     )
     raw = response.choices[0].message.content
-    expected = json.loads(item.expected_output)
+    expected = (
+        item.expected_output
+        if isinstance(item.expected_output, dict)
+        else json.loads(item.expected_output)
+    )
     score = score_reflect_output(raw, expected.get("status", ""))
     return raw, score
 

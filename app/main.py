@@ -262,6 +262,7 @@ def remove_session(session_id: str):
 
 # ---------------------------------------------------------------------------
 # Serve React frontend (when static/ exists from Docker build)
+# Keep /docs, /redoc, /openapi.json for FastAPI docs (take-home / testers).
 # ---------------------------------------------------------------------------
 STATIC_DIR = Path(__file__).parent.parent / "static"
 if STATIC_DIR.exists():
@@ -273,6 +274,18 @@ if STATIC_DIR.exists():
 
     @app.get("/{path:path}")
     def serve_react_catchall(path: str):
+        # Reserve FastAPI docs so they are visible at /docs and /redoc
+        if path in ("docs", "redoc", "openapi.json") or path.startswith("docs/") or path.startswith("redoc/"):
+            from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
+
+            if path == "docs" or path.startswith("docs"):
+                return get_swagger_ui_html(openapi_url="/openapi.json", title=app.title + " - Swagger UI")
+            if path == "redoc" or path.startswith("redoc"):
+                return get_redoc_html(openapi_url="/openapi.json", title=app.title + " - ReDoc")
+            if path == "openapi.json":
+                from fastapi.responses import JSONResponse
+
+                return JSONResponse(content=app.openapi())
         fp = STATIC_DIR / path
         if fp.exists() and fp.is_file():
             return FileResponse(fp)

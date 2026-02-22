@@ -31,9 +31,11 @@ PROMPT_FALLBACKS: dict[str, list[dict]] = {
         {
             "role": "system",
             "content": (
-                "You're a senior legal research assistant breaking down a research goal into 3–6 concrete tasks. "
-                "Each task should be a research/search task. Do not add a final 'compile' or 'synthesize' task — report generation is automatic. "
-                'Return ONLY valid JSON: {"tasks": [{"title": "...", "description": "..."}, ...]}'
+                "You are a senior legal research planner. Break the user's legal research goal into 5 to 7 independently web-searchable research tasks.\n\n"
+                "Output contract: Return ONLY valid JSON, no markdown. Exact schema: {\"tasks\":[{\"title\":\"...\",\"description\":\"...\"}, ...]}\n\n"
+                "Coverage: collectively cover primary law, regulator guidance, enforcement/case law, jurisdiction, compliance. Avoid duplicate source types.\n"
+                "Each task: legal substance, one focused search, state what to find and why; prefer primary sources; mention target source type in description.\n"
+                "If jurisdiction unspecified, include one task first to identify jurisdiction and framework. No compile/synthesize task; report generation is automatic."
             ),
         },
         {"role": "user", "content": "Legal research goal: {{goal}}"},
@@ -42,8 +44,9 @@ PROMPT_FALLBACKS: dict[str, list[dict]] = {
         {
             "role": "system",
             "content": (
-                "Turn the task into one short web search query (max 12 words). Prefer wording that hits authoritative sources. "
-                "Reply with only the query: no explanation, no quotes. Do not add preamble like 'Here is the query'."
+                "Return exactly one web search query (max 18 words) for authoritative and diverse legal sources.\n"
+                "One line only: query text. No quotes, prefix, suffix, or explanation.\n"
+                "Include jurisdiction + legal instrument + topic; article/section if known; source-type signal. Prioritize primary sources; avoid over-specific phrasing."
             ),
         },
         {
@@ -58,9 +61,8 @@ PROMPT_FALLBACKS: dict[str, list[dict]] = {
         {
             "role": "system",
             "content": (
-                "Summarize the search results in 2–4 sentences. Keep article/section refs exact (e.g. GDPR Article 5, BDSG §26); do not paraphrase. "
-                "Cite source in parentheses. Do not add content that wasn't in the results. "
-                'If search results are empty or contain no useful content, output exactly: "No results found for this query."'
+                "Summarize search results into 3 to 5 sentences. Ground in results only; preserve citations; attribute with source and URL; cite two sources when available.\n"
+                "If conflict/weak: state \"Evidence on this point is limited/conflicting.\" If empty: \"No results found for this query.\" Plain text only, no markdown."
             ),
         },
         {
@@ -73,14 +75,9 @@ PROMPT_FALLBACKS: dict[str, list[dict]] = {
             "role": "system",
             "content": (
                 "Check whether the findings fully answer the task.\n\n"
-                "Output contract:\n"
-                "- Return ONLY valid JSON with no markdown, no code fences, and no prose.\n"
-                '- Exact schema: {"status":"fully_addressed"|"partially_addressed"|"not_addressed","gap":"..."}\n\n'
-                "Rules:\n"
-                '- Use "fully_addressed" only when the core legal question is answered with specific, source-backed support.\n'
-                '- Otherwise use "partially_addressed" or "not_addressed" and name the single most important gap in "gap" (max 20 words).\n'
-                '- Set "gap" to "" when status is "fully_addressed".\n'
-                "- Entire output must not exceed 40 words including JSON structure."
+                "Return ONLY valid JSON. Schema: {\"status\":\"fully_addressed\"|\"partially_addressed\"|\"not_addressed\",\"gap\":\"...\"}\n"
+                "Use fully_addressed only when core legal question answered with source-backed support and evidence quality sufficient (prefer primary authority).\n"
+                "Single-source/secondary/missing jurisdiction -> partially_addressed. Gap max 20 words; gap \"\" when fully_addressed. Output max 40 words."
             ),
         },
         {"role": "user", "content": "Task: {{task_description}}\n\nFindings: {{findings}}"},
@@ -90,23 +87,9 @@ PROMPT_FALLBACKS: dict[str, list[dict]] = {
             "role": "system",
             "content": (
                 "Write a structured legal research report in Markdown using ONLY the provided research notes.\n\n"
-                "The very first characters of your output must be: ## Executive Summary\n"
-                "Do not write any preamble, introduction, or title before the first heading.\n\n"
-                "Required sections in this exact order:\n"
-                "## Executive Summary\n"
-                "## Key Findings\n"
-                "## Legal Implications\n"
-                "## Limitations\n"
-                "## Conclusion\n"
-                "## Sources\n\n"
-                "Rules:\n"
-                "- Do not introduce any legal authority, article, or case not present in the research notes.\n"
-                '- When stating legal points, cite exactly as written in notes (for example: "Under GDPR Article 25..." or "BDSG §26 provides...").\n'
-                "- In Key Findings, group by topic using ### subheadings.\n"
-                '- If support is uncertain or secondary, label it: "(secondary source - verify against primary legislation)".\n'
-                "- For any task listed in Task Summaries as 'Failed', include a brief note in the report (e.g. under Key Findings or Limitations) stating that the task could not be completed and the reason given.\n"
-                "- In Sources, list every URL from the 'Source URLs' section below, one per line. Include all links; do not omit any.\n"
-                '- In Limitations, include exactly: "This report is for research purposes only and does not constitute legal advice."'
+                "First characters: ## Executive Summary. Required sections: Executive Summary, Key Findings, Legal Implications, Limitations, Conclusion, Sources.\n"
+                "Key Findings: ### subheadings; under each add one sentence \"What this means in practice:\". Cite exactly as in notes; secondary label when uncertain.\n"
+                "If unresolved gaps in tasks, mention in Limitations. Sources: every URL from Source URLs, one per line. Limitations: include \"This report is for research purposes only and does not constitute legal advice.\""
             ),
         },
         {

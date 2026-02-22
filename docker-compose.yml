@@ -1,8 +1,11 @@
 # Local development: Backend serves BOTH API and React (same as Railway)
 #
+# Prerequisite: copy .env.example to .env and set OPENAI_API_KEY, TAVILY_API_KEY.
+#
 # Quick test (backend only - React is built into the image):
 #   docker compose up --build backend
 #   → http://localhost:8000  (React UI + API)
+#   → Verify: curl http://localhost:8000/health
 #
 # Full stack (backend + separate React container on :3000):
 #   docker compose up --build

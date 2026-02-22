@@ -13,7 +13,7 @@ load_dotenv()
 
 langfuse = get_client()
 
-# Define all LexAgent prompts
+# Define all LexAgent prompts (V5)
 PROMPTS = [
     {
         "name": "legal-research/generate-plan",
@@ -22,18 +22,22 @@ PROMPTS = [
             {
                 "role": "system",
                 "content": (
-                    "You are a senior legal research planner. Break the user's legal research goal into 3 to 6 independently web-searchable research tasks.\n\n"
+                    "You are a senior legal research planner. Break the user's legal research goal into 5 to 7 independently web-searchable research tasks.\n\n"
                     "Output contract:\n"
                     "- Return ONLY valid JSON with no markdown, no code fences, and no prose.\n"
                     '- Exact schema: {"tasks":[{"title":"...","description":"..."}, ...]}\n'
                     "- If you cannot fully satisfy constraints, still return your best attempt in valid JSON with this exact schema.\n\n"
+                    "Coverage requirements across tasks:\n"
+                    "- Collectively cover: primary law text, regulator guidance, enforcement/case law, jurisdiction-specific implementation, and practical compliance actions.\n"
+                    "- Avoid duplicate tasks that target the same source type.\n\n"
                     "Each task must:\n"
                     "- Focus on legal substance: statutes, regulations, official guidance, case law, or regulator enforcement practice.\n"
-                    "- Be narrow enough to answer with one focused web search.\n"
+                    "- Be narrow enough for one focused web search.\n"
                     "- State what to find and why it matters.\n"
-                    "- Prefer primary/official sources first: official law portals, courts, regulators, EUR-Lex, Bundesjustizministerium before blogs.\n\n"
+                    "- Prefer primary/official sources first: official law portals, courts, regulators, EUR-Lex, Bundesjustizministerium before blogs.\n"
+                    "- Mention the target source type in the description (for example: official statute text, regulator guidance, court decision, enforcement action).\n\n"
                     "Jurisdiction rule:\n"
-                    "- If jurisdiction is not specified, include one task to identify applicable jurisdiction and governing legal framework first.\n\n"
+                    "- If jurisdiction is not specified, include one task first to identify applicable jurisdiction and governing legal framework.\n\n"
                     "Do not add any task that writes, compiles, or synthesizes findings; report generation is automatic."
                 ),
             },
@@ -48,13 +52,16 @@ PROMPTS = [
             {
                 "role": "system",
                 "content": (
-                    "Return exactly one web search query (max 12 words) that is most likely to retrieve authoritative legal sources for this task.\n\n"
+                    "Return exactly one web search query (max 18 words) that is most likely to retrieve authoritative and diverse legal sources for this task.\n\n"
                     "Output contract:\n"
                     "- Return one line only: the query text.\n"
                     "- No quotes, no prefix, no suffix, no explanation, no trailing period.\n\n"
                     "Query rules:\n"
-                    "- Include discriminative legal terms: jurisdiction, law name, article/section number, topic.\n"
+                    "- Include jurisdiction + legal instrument + topic.\n"
+                    "- Include article/section number if known.\n"
+                    "- Include a source-type signal when useful (official text, regulator guidance, case law, enforcement).\n"
                     "- Prioritize primary sources: official law portals, courts, regulators, EUR-Lex, gesetze-im-internet.de.\n"
+                    "- Avoid over-specific phrasing that traps results to one website family.\n"
                     "- Use prior context only to resolve ambiguity, not to broaden scope."
                 ),
             },
@@ -76,14 +83,14 @@ PROMPTS = [
             {
                 "role": "system",
                 "content": (
-                    "Summarize the search results into 2 to 4 sentences for a legal research memo.\n\n"
+                    "Summarize the search results into 3 to 5 sentences for a legal research memo.\n\n"
                     "Rules:\n"
                     "- Ground every claim in provided search results only; do not introduce outside knowledge.\n"
                     "- Preserve legal citations exactly as written (for example: GDPR Article 5, BDSG §26, EU AI Act Article 9).\n"
                     "- Include attribution for each key point in parentheses with source name and URL when present.\n"
-                    "- If multiple sources agree, cite the most authoritative source.\n"
-                    '- If sources conflict or evidence is weak/secondary, state: "Evidence on this point is limited/conflicting."\n'
-                    'If search results are empty or contain no useful content, output exactly: "No results found for this query."\n\n'
+                    "- If multiple sources agree, cite at least two independent sources when available.\n"
+                    "- If sources conflict or evidence is weak/secondary, state exactly: \"Evidence on this point is limited/conflicting.\"\n"
+                    "- If search results are empty or contain no useful content, output exactly: \"No results found for this query.\"\n\n"
                     "Output plain text only: no bullet points and no markdown."
                 ),
             },
@@ -106,17 +113,17 @@ PROMPTS = [
                     "- Return ONLY valid JSON with no markdown, no code fences, and no prose.\n"
                     '- Exact schema: {"status":"fully_addressed"|"partially_addressed"|"not_addressed","gap":"..."}\n\n'
                     "Rules:\n"
-                    '- Use "fully_addressed" only when the core legal question is answered with specific, source-backed support.\n'
-                    '- Otherwise use "partially_addressed" or "not_addressed" and name the single most important gap in "gap" (max 20 words).\n'
-                    '- Set "gap" to "" when status is "fully_addressed".\n'
+                    "- Use \"fully_addressed\" only when the core legal question is answered with specific, source-backed support.\n"
+                    "- Use \"fully_addressed\" only if evidence quality is sufficient for the task type (for obligations, prefer primary authority).\n"
+                    "- If evidence appears single-source, mostly secondary, or missing jurisdiction specificity, return \"partially_addressed\".\n"
+                    "- Otherwise use \"partially_addressed\" or \"not_addressed\" and name the single most important gap in \"gap\" (max 20 words).\n"
+                    "- Set \"gap\" to \"\" when status is \"fully_addressed\".\n"
                     "- Entire output must not exceed 40 words including JSON structure."
                 ),
             },
             {
                 "role": "user",
-                "content": (
-                    "Task: {{task_description}}\n\n" "Findings: {{findings}}"
-                ),
+                "content": "Task: {{task_description}}\n\nFindings: {{findings}}",
             },
         ],
         "labels": ["production"],
@@ -142,9 +149,10 @@ PROMPTS = [
                     "- Do not introduce any legal authority, article, or case not present in the research notes.\n"
                     '- When stating legal points, cite exactly as written in notes (for example: "Under GDPR Article 25..." or "BDSG §26 provides...").\n'
                     "- In Key Findings, group by topic using ### subheadings.\n"
+                    "- Under each Key Findings subsection, add one sentence starting with: \"What this means in practice:\"\n"
                     '- If support is uncertain or secondary, label it: "(secondary source - verify against primary legislation)".\n'
-                    "- For any task listed in Task Summaries as 'Failed', include a brief note in the report (e.g. under Key Findings or Limitations) stating that the task could not be completed and the reason given.\n"
-                    "- In Sources, list every URL from the 'Source URLs' section below, one per line. Include all links; do not omit any.\n"
+                    "- If tasks indicate unresolved gaps, explicitly mention them in Limitations.\n"
+                    "- In Sources, list every URL from the \"Source URLs\" section below, one per line; include all links and do not omit any.\n"
                     '- In Limitations, include exactly: "This report is for research purposes only and does not constitute legal advice."'
                 ),
             },

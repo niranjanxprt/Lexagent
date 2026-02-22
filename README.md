@@ -140,18 +140,29 @@ cd frontend-react && npm install && npm run dev
 
 ### Local Docker (API + React)
 
-The backend image **includes** the React app (built at image build time). One container serves both.
+The backend image **includes** the React app (built at image build time). One container serves both. Use this to test the same setup as production (e.g. Railway).
 
-```bash
-docker compose up --build backend
-```
+**Steps for testers:**
 
-- **http://localhost:8000** — React UI and API (same as Railway)
-- Ensure `.env` contains `OPENAI_API_KEY` and `TAVILY_API_KEY`
+1. Create env file (required; Docker Compose loads `.env`):
+   ```bash
+   cp .env.example .env
+   ```
+   Edit `.env` and set at least `OPENAI_API_KEY` and `TAVILY_API_KEY`. Other keys are optional.
 
-Optional: `docker compose up --build` also starts a separate React container on port 3000; both work. The backend alone is sufficient for local testing.
+2. Start the backend (single container = API + React):
+   ```bash
+   docker compose up --build backend
+   ```
 
-Sessions and reports persist when you mount volumes (default: `./data`, `./reports`). Same setup without Docker: `make backend` and `make react` (or `make dev`).
+3. Open in browser: **http://localhost:8000** — React UI and API (same as Railway). FastAPI interactive docs: **http://localhost:8000/docs** (Swagger UI), **http://localhost:8000/redoc** (ReDoc).
+
+4. Verify: `curl http://localhost:8000/health` should return `{"status":"ok"}`.
+
+- Sessions and reports persist via mounted volumes: `./data`, `./reports`.
+- Optional: `docker compose up --build` (no service name) starts backend + a separate React container on port 3000; for most tests, `backend` alone is enough.
+
+**Without Docker:** Run `make backend` (Terminal 1) and `make react` (Terminal 2), or `make dev`; then use **http://localhost:8000** (API) and **http://localhost:5173** (React dev UI).
 
 The agent loop, context compression, prompt rationale, and failure resilience are documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
@@ -209,6 +220,8 @@ High-level layout and design are documented in [docs/ARCHITECTURE.md](docs/ARCHI
 
 ## API Endpoints
 
+Interactive API docs (Swagger UI): **http://localhost:8000/docs** — try endpoints from the browser. ReDoc: **http://localhost:8000/redoc**.
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/health` | Health check |
@@ -260,7 +273,7 @@ Every session produces a trace in Langfuse: per-task sub-spans, token usage, lat
 | [docs/EVALUATION.md](docs/EVALUATION.md) | Evaluation design and per-scenario criteria |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deployment (Railway, Docker, local; includes CLI quick reference) |
 | [docs/LANGFUSE_SETUP.md](docs/LANGFUSE_SETUP.md) | Langfuse prompt management |
-| [docs/LEGAL_RESEARCH_PROMPTS_V4.md](docs/LEGAL_RESEARCH_PROMPTS_V4.md) | All 5 legal-research prompts (V4) in one file |
+| [docs/LEGAL_RESEARCH_PROMPTS_V4.md](docs/LEGAL_RESEARCH_PROMPTS_V4.md) | All 5 legal-research prompts (V4 doc; current prompts are V5 in code and Langfuse) |
 | [docs/SECURITY.md](docs/SECURITY.md) | Security guardrails |
 | [docs/BEST_PRACTICES.md](docs/BEST_PRACTICES.md) | Development best practices |
 | [transcript.md](transcript.md) | Example session transcript |
